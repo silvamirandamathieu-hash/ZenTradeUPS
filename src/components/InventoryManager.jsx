@@ -83,7 +83,7 @@ const ImageWrapper = styled.div`
 `;
 
 const SkinImage = styled.img`
-  width: 250px;
+  width: 200px;
   max-width: 100%;
   height: auto;
   border-radius: 12px;
@@ -101,22 +101,27 @@ const SkinDetails = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.1rem;
+  align-items: left;
+  text-align: left;
 
   p {
-    margin: 0;
-    line-height: 1.4;
-    font-size: 0.95rem;
+    margin: 0.5rem;
+    line-height: 1.2;
+    font-size: 1.3rem;
   }
 `;
 
+
 const SkinTitle = styled.h3`
-  margin: 0;
-  font-size: 1.2rem;
+  margin: 0.5rem;
+  font-size: 1.5rem;
   font-weight: 600;
   color: ${({ rarity, theme }) =>
     theme.rarityColors[rarity] || theme.colors.accent};
+  text-align: left;
 `;
+
 
 const Label = styled.span`
   font-weight: 600;
@@ -302,8 +307,8 @@ function InventoryManager({ inventory, priceMap = {} }) {
                   {skin.name}
                 </SkinTitle>
 
-                <p><Label>Usure :</Label> <Value>{skin.wear}</Value></p>
-                <p><Label>Rareté :</Label> <Value>{skin.rarity}</Value></p>
+                <p><Label></Label> <Value>{skin.wear}</Value></p>
+                
 
                 <p>
                   <Label>Collection :</Label> <Value>{skin.collection}</Value>
