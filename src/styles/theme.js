@@ -1,32 +1,68 @@
-export const theme = {
+export const lightTheme = {
   colors: {
-    bg: '#0080ff',         // Fond général
-    cardBg: '#6a5858',      // Fond des cartes
-    border: '#244ecc',      // Bordures par défaut
-    text: '#2c266c',        // Texte principal
-    accent: '#2196f3',      // Accent (liens, survols)
-    stattrak: '#cf9b00',    // Couleur StatTrak™
+    bg: '#ffffffff',         // Fond général doux
+    cardBg: '#efeaeaff', 
+    cardBackground: 'rgba(244, 237, 237, 0.62)',    // Fond des cartes clair
+    border: '#d0d7de',     // Bordures subtiles
+    text: '#1f2937',       // Texte principal sombre
+    accent: '#2563eb',     // Accent bleu vif
+    stattrak: '#f59e0b',   // Couleur StatTrak™ (orange doré)
+    textOnBadge: '#000000',
   },
 
   rarityColors: {
     'Consumer Grade': '#b0c3d9',     // Gris clair
-    'Industrial Grade': '#0dabd2',   // Bleu clair
-    'Mil-Spec Grade': '#326ee7',     // Bleu moyen
-    'Restricted': '#742ff3',         // Violet
-    'Classified': '#d942ea',         // Rose
-    'Covert': '#eb4b4b',             // Rouge
-    'Contraband': '#e4ae39',         // Doré
-    '★': '#cf9b00',                  // Couleur des couteaux / étoiles
+    'Industrial Grade': '#399fc4ff',   // Bleu clair
+    'Mil-Spec Grade': '#1f25cdd4',     // Bleu moyen
+    'Restricted': '#da23ffff',         // Violet
+    'Classified': '#e91eceff',         // Rose vif
+    'Covert': '#e74c3c',             // Rouge intense
+    'Contraband': '#f1c40f',         // Jaune doré
+    '★': '#f59e0b',                  // Couleur des couteaux / étoiles
   },
 
   spacing: {
-    sm: '0.5rem',   // Petit espacement
-    md: '1rem',     // Moyen
-    lg: '2rem',     // Grand
+    sm: '0.5rem',
+    md: '1rem',
+    lg: '2rem',
   },
 
   radius: {
-    sm: '6px',      // Petits arrondis
-    md: '12px',     // Arrondis moyens
+    sm: '6px',
+    md: '12px',
+  }
+};
+export const darkTheme = {
+  colors: {
+    bg: '#0f172a',
+    cardBg: '#1e293b',
+    cardBackground: 'rgba(79, 83, 113, 0.53)',
+    border: '#334155',
+    text: '#f1f5f9',
+    accent: '#60a5fa',
+    stattrak: '#fbbf24',
+    textOnBadge: '#ffffff',
+  },
+
+  rarityColors: {
+    'Consumer Grade': '#94a3b8',
+    'Industrial Grade': '#38bdf8',
+    'Mil-Spec Grade': '#3b82f6',
+    'Restricted': '#a78bfa',
+    'Classified': '#f472b6',
+    'Covert': '#f87171',
+    'Contraband': '#facc15',
+    '★': '#fbbf24',
+  },
+
+  spacing: {
+    sm: '0.5rem',
+    md: '1rem',
+    lg: '2rem',
+  },
+
+  radius: {
+    sm: '6px',
+    md: '12px',
   }
 };

@@ -3,8 +3,7 @@ import { getInventory, addSkin, clearInventory } from './db';
 import InventoryManager from './components/InventoryManager';
 import MarketImporter from './components/MarketImporter';
 import { ThemeProvider } from 'styled-components';
-import { theme } from './styles/theme'; 
-
+import { lightTheme, darkTheme } from './styles/theme';
 
 function App() {
   const [inventory, setInventory] = useState([]);
@@ -14,6 +13,7 @@ function App() {
     return saved ? JSON.parse(saved) : {};
   });
   const [activeTab, setActiveTab] = useState('inventory');
+  const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
     getInventory().then(setInventory);
@@ -71,48 +71,69 @@ function App() {
   };
 
   return (
-    <ThemeProvider theme={theme}>
-      <>
-        <div style={{ padding: 20 }}>
-          <h1>🎮 Gestionnaire de Skins CS</h1>
+    <ThemeProvider theme={darkMode ? darkTheme : lightTheme}>
+      <div style={{
+        background: darkMode ? darkTheme.colors.bg : lightTheme.colors.bg,
+        minHeight: '100vh',
+        padding: '2rem',
+        transition: 'background 0.3s ease',
+        color: darkMode ? darkTheme.colors.text : lightTheme.colors.text
+      }}>
+        <h1>🎮 Gestionnaire de Skins CS</h1>
 
-          {/* Onglets */}
-          <div style={{ marginBottom: 20 }}>
-            <button onClick={() => setActiveTab('inventory')} disabled={activeTab === 'inventory'}>
-              🎒 Inventaire
-            </button>
-            <button onClick={() => setActiveTab('market')} disabled={activeTab === 'market'}>
-              📈 Prix Marché
-            </button>
-          </div>
-
-          {/* Boutons d'action */}
-          {activeTab === 'inventory' && (
-            <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-              <button onClick={handleExport}>📤 Exporter</button>
-              <label>
-                📥 Importer
-                <input type="file" accept=".json,.txt" onChange={handleImport} style={{ display: 'none' }} />
-              </label>
-              <button onClick={handleReset} style={{ color: 'red' }}>🗑️ Réinitialiser</button>
-            </div>
-          )}
-
-          {/* Erreur */}
-          {error && <p style={{ color: 'red' }}>{error}</p>}
-
-          {/* Contenu des onglets */}
-          {activeTab === 'inventory' && (
-            <InventoryManager inventory={inventory} priceMap={priceMap} />
-          )}
-          {activeTab === 'market' && (
-            <MarketImporter onImport={handleMarketImport} />
-          )}
+        {/* Toggle mode */}
+        <div style={{ marginBottom: 20 }}>
+          <button
+            onClick={() => setDarkMode(prev => !prev)}
+            style={{
+              marginBottom: '1rem',
+              padding: '0.5rem 1rem',
+              borderRadius: '8px',
+              border: 'none',
+              background: darkMode ? '#334155' : '#e2e8f0',
+              color: darkMode ? '#e8ecefff' : '#1f2937',
+              cursor: 'pointer'
+            }}
+          >
+            {darkMode ? '☀️ Mode clair' : '🌙 Mode sombre'}
+          </button>
         </div>
-      </>
+
+        {/* Onglets */}
+        <div style={{ marginBottom: 20 }}>
+          <button onClick={() => setActiveTab('inventory')} disabled={activeTab === 'inventory'}>
+            🎒 Inventaire
+          </button>
+          <button onClick={() => setActiveTab('market')} disabled={activeTab === 'market'}>
+            📈 Prix Marché
+          </button>
+        </div>
+
+        {/* Boutons d'action */}
+        {activeTab === 'inventory' && (
+          <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+            <button onClick={handleExport}>📤 Exporter</button>
+            <label>
+              📥 Importer
+              <input type="file" accept=".json,.txt" onChange={handleImport} style={{ display: 'none' }} />
+            </label>
+            <button onClick={handleReset} style={{ color: 'red' }}>🗑️ Réinitialiser</button>
+          </div>
+        )}
+
+        {/* Erreur */}
+        {error && <p style={{ color: 'red' }}>{error}</p>}
+
+        {/* Contenu des onglets */}
+        {activeTab === 'inventory' && (
+          <InventoryManager inventory={inventory} priceMap={priceMap} />
+        )}
+        {activeTab === 'market' && (
+          <MarketImporter onImport={handleMarketImport} />
+        )}
+      </div>
     </ThemeProvider>
   );
-
 }
 
 export default App;

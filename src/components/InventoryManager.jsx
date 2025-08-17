@@ -23,7 +23,7 @@ const Card = styled.div`
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 1.5rem;
-  background: rgba(255, 255, 255, 0.9);
+  background: ${({ theme }) => theme.colors.cardBackground};
   backdrop-filter: blur(12px);
   border: 2px solid ${({ rarity, theme }) =>
     theme.rarityColors[rarity] || theme.colors.border};
@@ -44,6 +44,7 @@ const Card = styled.div`
   }
 `;
 
+
 const PriceColumn = styled.div`
   position: absolute;
   top: 50%;
@@ -60,21 +61,22 @@ const PriceColumn = styled.div`
 
 const QuantityBadge = styled.div`
   position: absolute;
-  bottom: 4px;
-  right: 0px;
-  color: black;
+  bottom: 12px;
+  right: 2px;
+  color: ${({ theme }) => theme.colors.textOnBadge};
   font-size: 2rem;
   font-weight: bold;
-  font-family: 'Comic Sans MS', 'Comic Sans', cursive;
+  font-family: 'Verdana', sans-serif;
   line-height: 1;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-  -webkit-text-stroke: 0.4px white;
-  text-stroke: 0.4px white;
+  text-shadow: 3px 1px 5px rgba(130, 148, 210, 0.2);
+  -webkit-text-stroke: 0.4px ${({ theme }) => theme.colors.textOnBadge};
+  text-stroke: 0.2px ${({ theme }) => theme.colors.textOnBadge};
   padding: 4px 10px;
   display: flex;
   align-items: center;
   justify-content: center;
 `;
+
 
 const ImageWrapper = styled.div`
   position: relative;
