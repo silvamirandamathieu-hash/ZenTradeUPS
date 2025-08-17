@@ -3,13 +3,15 @@ import styled from 'styled-components';
 
 const List = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  grid-template-columns: 1fr;
   gap: 1.5rem;
   padding: 2rem;
+  margin: 0rem;
+  margin-right: 4rem;
 
-  /* Supprime le centrage forcé */
-  max-width: none;
-  margin: 0;
+  @media (min-width: 900px) {
+    grid-template-columns: 1fr 1fr;
+  }
 `;
 
 
@@ -28,6 +30,9 @@ const Card = styled.div`
   position: relative;
   box-shadow: 0 8px 24px rgba(0,0,0,0.08);
   transition: transform 0.3s ease;
+  margin: 1rem;
+  margin-left: 1rem;
+  margin-right: 50rem;
 
   &:hover {
     transform: scale(1.01);
@@ -54,7 +59,7 @@ const PriceBlock = styled.div`
 const PriceColumn = styled.div`
   position: absolute;
   top: 50%;
-  right: 1.5rem;
+  right: 5rem;
   transform: translateY(-50%);
   display: flex;
   flex-direction: column;
