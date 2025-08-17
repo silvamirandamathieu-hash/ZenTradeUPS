@@ -178,6 +178,8 @@ function InventoryManager({ inventory, priceMap = {}, onExport, onImport, onRese
   const [selectedItemId, setSelectedItemId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [collectionSearch, setCollectionSearch] = useState('');
+  const [raritySearch, setRaritySearch] = useState('all');
+  
 
   const handleResetFilters = () => {
     setTypeFilter('all');
@@ -185,11 +187,29 @@ function InventoryManager({ inventory, priceMap = {}, onExport, onImport, onRese
     setCollectionFilter('all');
     setSearchQuery('');
     setCollectionSearch('');
+    setRaritySearch('all');
   };
+
+  const rarityOrder = [
+    "Consumer Grade",
+    "Industrial Grade",
+    "Mil-Spec Grade",
+    "Restricted",
+    "Classified",
+    "Covert",
+    "Contraband", // optionnel
+    "Extraordinary" // pour les gants/stickers
+  ];
+
 
   const collections = useMemo(() => {
     const unique = new Set(inventory.map(s => s.collection).filter(Boolean));
     return Array.from(unique).sort();
+  }, [inventory]);
+
+  const rarity = useMemo(() => {
+    const unique2 = new Set(inventory.map(s => s.rarity).filter(Boolean));
+    return Array.from(unique2).sort();
   }, [inventory]);
 
   const filteredInventory = useMemo(() => {
@@ -205,8 +225,9 @@ function InventoryManager({ inventory, priceMap = {}, onExport, onImport, onRese
         skin.name.toLowerCase().includes(searchQuery.trim().toLowerCase());
       const matchesCollectionSearch = collectionSearch.trim() === '' ||
         (skin.collection || '').toLowerCase().includes(collectionSearch.trim().toLowerCase());
+      const matchesRaritySearch = raritySearch === 'all' || skin.rarity === raritySearch ;
 
-      return matchesType && matchesWear && matchesCollection && matchesSearch && matchesCollectionSearch;
+      return matchesType && matchesWear && matchesCollection && matchesSearch && matchesCollectionSearch && matchesRaritySearch;
     });
   }, [
     inventory,
@@ -214,7 +235,8 @@ function InventoryManager({ inventory, priceMap = {}, onExport, onImport, onRese
     wearFilter,
     collectionFilter,
     searchQuery,
-    collectionSearch
+    collectionSearch,
+    raritySearch,
   ]);
 
   return (
@@ -300,7 +322,16 @@ function InventoryManager({ inventory, priceMap = {}, onExport, onImport, onRese
           <option value="all">Tous les types</option>
           <option value="stattrak">StatTrak™</option>
           <option value="regular">Non-StatTrak</option>
+          
         </Select>
+
+        <Select value={raritySearch} onChange={e => setRaritySearch(e.target.value)}>
+          <option value="all">Toutes les raretés</option>
+          {rarityOrder.map((rarity, i) => (
+            <option key={i} value={rarity}>{rarity}</option>
+          ))}
+        </Select>
+
 
         <Select value={wearFilter} onChange={e => setWearFilter(e.target.value)}>
           <option value="all">Toutes les usures</option>
