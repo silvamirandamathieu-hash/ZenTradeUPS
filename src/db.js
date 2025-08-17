@@ -1,17 +1,23 @@
 import Dexie from 'dexie';
 
 export const db = new Dexie('cs2TradeUpDB');
+
+// Définition des tables
 db.version(1).stores({
   inventory: '++id,name,wear,collection,collectionIMGUrl,rarity,isStatTrak,imageUrl',
   history: '++id,name,wear,price,date,collection,rarity,imageUrl'
 });
 
-// Inventory
+//
+// 📦 INVENTAIRE
+//
+
 export async function getInventory() {
   return db.inventory.toArray();
 }
 
 export async function addSkin(skin) {
+  if (!skin || typeof skin !== 'object') throw new Error('Skin invalide');
   return db.inventory.add(skin);
 }
 
@@ -20,7 +26,7 @@ export async function clearInventory() {
 }
 
 export async function migrateInventory() {
-  const all = await db.inventory.toArray();
+  const all = await getInventory();
 
   const migrated = all.map(skin => {
     const item = {
@@ -37,12 +43,16 @@ export async function migrateInventory() {
     };
   });
 
-  await db.inventory.clear();
+  await clearInventory();
   await db.inventory.bulkAdd(migrated);
 }
 
-// History
+//
+// 📜 HISTORIQUE
+//
+
 export async function addHistory(entry) {
+  if (!entry || typeof entry !== 'object') throw new Error('Entrée invalide');
   return db.history.add(entry);
 }
 

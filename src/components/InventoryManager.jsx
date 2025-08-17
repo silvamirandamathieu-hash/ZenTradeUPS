@@ -173,6 +173,7 @@ function InventoryManager({ inventory, priceMap = {} }) {
   const [selectedItemId, setSelectedItemId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [collectionSearch, setCollectionSearch] = useState('');
+  
 
   const handleResetFilters = () => {
     setTypeFilter('all');

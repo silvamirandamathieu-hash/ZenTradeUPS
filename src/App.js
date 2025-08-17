@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getInventory, addSkin, clearInventory } from './db';
-import InventoryManager from './components/InventoryManager';
-import MarketImporter from './components/MarketImporter';
+import InventoryTabs from './components/InventoryTabs';
 import { ThemeProvider } from 'styled-components';
 import { lightTheme, darkTheme } from './styles/theme';
 
@@ -12,8 +11,9 @@ function App() {
     const saved = localStorage.getItem('priceMap');
     return saved ? JSON.parse(saved) : {};
   });
-  const [activeTab, setActiveTab] = useState('inventory');
   const [darkMode, setDarkMode] = useState(false);
+  
+
 
   useEffect(() => {
     getInventory().then(setInventory);
@@ -99,38 +99,21 @@ function App() {
           </button>
         </div>
 
-        {/* Onglets */}
-        <div style={{ marginBottom: 20 }}>
-          <button onClick={() => setActiveTab('inventory')} disabled={activeTab === 'inventory'}>
-            🎒 Inventaire
-          </button>
-          <button onClick={() => setActiveTab('market')} disabled={activeTab === 'market'}>
-            📈 Prix Marché
-          </button>
-        </div>
-
         {/* Boutons d'action */}
-        {activeTab === 'inventory' && (
-          <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-            <button onClick={handleExport}>📤 Exporter</button>
-            <label>
-              📥 Importer
-              <input type="file" accept=".json,.txt" onChange={handleImport} style={{ display: 'none' }} />
-            </label>
-            <button onClick={handleReset} style={{ color: 'red' }}>🗑️ Réinitialiser</button>
-          </div>
-        )}
+        <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+          <button onClick={handleExport}>📤 Exporter</button>
+          <label style={{ cursor: 'pointer' }}>
+            📥 Importer
+            <input type="file" accept=".json,.txt" onChange={handleImport} style={{ display: 'none' }} />
+          </label>
+          <button onClick={handleReset} style={{ color: 'red' }}>🗑️ Réinitialiser</button>
+        </div>
 
         {/* Erreur */}
         {error && <p style={{ color: 'red' }}>{error}</p>}
 
-        {/* Contenu des onglets */}
-        {activeTab === 'inventory' && (
-          <InventoryManager inventory={inventory} priceMap={priceMap} />
-        )}
-        {activeTab === 'market' && (
-          <MarketImporter onImport={handleMarketImport} />
-        )}
+        {/* Inventaire */}
+        <InventoryTabs inventory={inventory} priceMap={priceMap} />
       </div>
     </ThemeProvider>
   );
