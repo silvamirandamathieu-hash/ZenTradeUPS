@@ -27,7 +27,8 @@ const Card = styled.div`
   gap: 1.5rem;
   background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(12px);
-  border: 1px solid ${({ theme }) => theme.colors.border};
+  border: 2px solid ${({ rarity, theme }) =>
+    theme.rarityColors[rarity] || theme.colors.border};
   border-radius: 16px;
   padding: 1.5rem;
   position: relative;
@@ -44,6 +45,7 @@ const Card = styled.div`
     align-items: center;
   }
 `;
+
 
 const PriceBlock = styled.div`
   margin-top: 0.5rem;
@@ -105,11 +107,14 @@ const SkinImage = styled.img`
   border-radius: 12px;
   object-fit: cover;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border: ${({ isStatTrak, theme }) =>
+    isStatTrak ? `3px solid ${theme.colors.stattrak}` : 'none'};
 
   @media (max-width: 600px) {
     width: 100%;
   }
 `;
+
 
 
 const SkinDetails = styled.div`
@@ -130,9 +135,10 @@ const SkinTitle = styled.h3`
   margin: 0;
   font-size: 1.2rem;
   font-weight: 600;
-  color: ${({ isStatTrak, theme }) =>
-    isStatTrak ? theme.colors.stattrak : theme.colors.accent};
+  color: ${({ rarity, theme }) =>
+    theme.rarityColors[rarity] || theme.colors.accent};
 `;
+
 
 const Label = styled.span`
   font-weight: 600;
@@ -158,6 +164,15 @@ const ProtectionIcon = styled.img`
   margin-right: 5px;
 `;
 
+const ProtectionBadge = styled.img`
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 40px;
+  height: 40px;
+  z-index: 2;
+`;
+
 function InventoryManager({ inventory, priceMap = {} }) {
   return (
     <List>
@@ -166,14 +181,21 @@ function InventoryManager({ inventory, priceMap = {} }) {
         const isStatTrak = skin.isStatTrak;
 
         return (
-          <Card key={skin.id} isStatTrak={isStatTrak}>
-          <ImageWrapper>
-            <SkinImage src={skin.imageUrl} alt={skin.name} />
-            <QuantityBadge>x{skin.quantity}</QuantityBadge>
-          </ImageWrapper>
+          <Card key={skin.id} rarity={skin.rarity}>
+            <ImageWrapper>
+              {skin.tradeProtected && skin.protectionIcon && (
+                <ProtectionBadge src={skin.protectionIcon} alt="Trade Protected" />
+              )}
+              <SkinImage
+                src={skin.imageUrl}
+                alt={skin.name}
+                isStatTrak={isStatTrak}
+              />
+              <QuantityBadge>x{skin.quantity}</QuantityBadge>
+            </ImageWrapper>
 
             <SkinDetails>
-              <SkinTitle isStatTrak={isStatTrak}>
+              <SkinTitle rarity={skin.rarity} isStatTrak={isStatTrak}>
                 {isStatTrak && <span title="StatTrak™">★ </span>}
                 {skin.name}
               </SkinTitle>
@@ -192,10 +214,12 @@ function InventoryManager({ inventory, priceMap = {} }) {
                   />
                 )}
               </p>
+
               <PriceColumn>
-                <div>💰 Prix importé : {skin.price.toFixed(2)} €</div>
-                <div>💵 Prix marché : {marketPrice !== undefined ? marketPrice.toFixed(2) + ' €' : '—'}</div>
+                <div>💰 : {skin.price.toFixed(2)} €</div>
+                <div>💵 : {marketPrice !== undefined ? marketPrice.toFixed(2) + ' €' : '—'}</div>
               </PriceColumn>
+
               {skin.tradeProtected && skin.protectionIcon && (
                 <p>
                   <ProtectionIcon src={skin.protectionIcon} alt="Trade Protected" />
@@ -209,5 +233,6 @@ function InventoryManager({ inventory, priceMap = {} }) {
     </List>
   );
 }
+
 
 export default InventoryManager;
