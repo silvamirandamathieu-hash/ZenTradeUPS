@@ -2,14 +2,22 @@ import React from 'react';
 import styled from 'styled-components';
 
 const List = styled.div`
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
   gap: 1.5rem;
   padding: 2rem;
+
+  /* Supprime le centrage forcé */
+  max-width: none;
+  margin: 0;
 `;
 
+
+
 const Card = styled.div`
+  width: 100%;
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: 1.5rem;
   background: rgba(255, 255, 255, 0.9);
