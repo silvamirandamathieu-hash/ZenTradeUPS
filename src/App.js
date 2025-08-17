@@ -3,6 +3,7 @@ import { getInventory, addSkin, clearInventory } from './db';
 import InventoryTabs from './components/InventoryTabs';
 import { ThemeProvider } from 'styled-components';
 import { lightTheme, darkTheme } from './styles/theme';
+import { db } from './db';
 
 function App() {
   const [inventory, setInventory] = useState([]);
@@ -18,10 +19,6 @@ function App() {
   useEffect(() => {
     getInventory().then(setInventory);
   }, []);
-
-  useEffect(() => {
-    localStorage.setItem('priceMap', JSON.stringify(priceMap));
-  }, [priceMap]);
 
   const handleImport = () => {
     const input = document.createElement('input');
@@ -56,7 +53,9 @@ function App() {
           return;
         }
 
-        setInventory(data); // ✅ Met à jour ton inventaire
+        setInventory(data);
+        await db.inventory.clear();
+        await db.inventory.bulkAdd(data); // ✅ Met à jour ton inventaire
         alert('Inventaire importé avec succès !');
       } catch (err) {
         console.error('Erreur d’importation :', err);
