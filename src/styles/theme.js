@@ -1,29 +1,32 @@
 export const theme = {
   colors: {
-    bg: '#0080ffff',
-    cardBg: '#6a5858ff',
-    border: '#244eccff',
-    text: '#2c266cff',
-    accent: '#2196f3',
-    stattrak: '#cf9b00ff',
+    bg: '#0080ff',         // Fond général
+    cardBg: '#6a5858',      // Fond des cartes
+    border: '#244ecc',      // Bordures par défaut
+    text: '#2c266c',        // Texte principal
+    accent: '#2196f3',      // Accent (liens, survols)
+    stattrak: '#cf9b00',    // Couleur StatTrak™
   },
+
   rarityColors: {
-    'Consumer Grade': '#b0c3d9',
-    'Industrial Grade': '#5e98d9',
-    'Mil-Spec Grade': '#4b69ff',
-    'Restricted': '#8847ff',
-    'Classified': '#d32ce6',
-    'Covert': '#eb4b4b',
-    'Contraband': '#e4ae39',
-    '★': '#cf9b00',
+    'Consumer Grade': '#b0c3d9',     // Gris clair
+    'Industrial Grade': '#0dabd2',   // Bleu clair
+    'Mil-Spec Grade': '#326ee7',     // Bleu moyen
+    'Restricted': '#742ff3',         // Violet
+    'Classified': '#d942ea',         // Rose
+    'Covert': '#eb4b4b',             // Rouge
+    'Contraband': '#e4ae39',         // Doré
+    '★': '#cf9b00',                  // Couleur des couteaux / étoiles
   },
+
   spacing: {
-    sm: '0.5rem',
-    md: '1rem',
-    lg: '2rem',
+    sm: '0.5rem',   // Petit espacement
+    md: '1rem',     // Moyen
+    lg: '2rem',     // Grand
   },
+
   radius: {
-    sm: '6px',
-    md: '12px',
+    sm: '6px',      // Petits arrondis
+    md: '12px',     // Arrondis moyens
   }
 };
