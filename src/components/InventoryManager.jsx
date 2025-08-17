@@ -6,13 +6,16 @@ const List = styled.div`
   grid-template-columns: 1fr;
   gap: 1.5rem;
   padding: 2rem;
-  margin: 0rem;
-  margin-right: 4rem;
 
-  @media (min-width: 900px) {
+  @media (min-width: 1580px) {
     grid-template-columns: 1fr 1fr;
   }
+
+  @media (max-width: 1579px) {
+    grid-template-columns: 1fr;
+  }
 `;
+
 
 
 
@@ -30,9 +33,7 @@ const Card = styled.div`
   position: relative;
   box-shadow: 0 8px 24px rgba(0,0,0,0.08);
   transition: transform 0.3s ease;
-  margin: 1rem;
-  margin-left: 1rem;
-  margin-right: 50rem;
+  margin: 0;
 
   &:hover {
     transform: scale(1.01);
