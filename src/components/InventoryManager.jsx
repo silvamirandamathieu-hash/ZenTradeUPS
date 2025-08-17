@@ -174,13 +174,19 @@ function InventoryManager({ inventory, priceMap = {} }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [collectionSearch, setCollectionSearch] = useState('');
 
-
-
+  const handleResetFilters = () => {
+    setTypeFilter('all');
+    setWearFilter('all');
+    setCollectionFilter('all');
+    setSearchQuery('');
+    setCollectionSearch('');
+  };
 
   const collections = useMemo(() => {
     const unique = new Set(inventory.map(s => s.collection).filter(Boolean));
     return Array.from(unique).sort();
   }, [inventory]);
+  
 
   const filteredInventory = useMemo(() => {
     return inventory.filter(skin => {
@@ -189,28 +195,26 @@ function InventoryManager({ inventory, priceMap = {} }) {
         (typeFilter === 'stattrak' && skin.statTrakItems?.length > 0) ||
         (typeFilter === 'regular' && skin.regularItems?.length > 0);
 
-      const matchesWear =
-        wearFilter === 'all' || skin.wear === wearFilter;
-
-      const matchesCollection =
-        collectionFilter === 'all' || skin.collection === collectionFilter;
-
-      const matchesSearch =
-        searchQuery.trim() === '' ||
+      const matchesWear = wearFilter === 'all' || skin.wear === wearFilter;
+      const matchesCollection = collectionFilter === 'all' || skin.collection === collectionFilter;
+      const matchesSearch = searchQuery.trim() === '' ||
         skin.name.toLowerCase().includes(searchQuery.trim().toLowerCase());
-      const matchesCollectionSearch =
-        collectionSearch.trim() === '' ||
+      const matchesCollectionSearch = collectionSearch.trim() === '' ||
         (skin.collection || '').toLowerCase().includes(collectionSearch.trim().toLowerCase());
 
       return matchesType && matchesWear && matchesCollection && matchesSearch && matchesCollectionSearch;
-
     });
-  }, [inventory, typeFilter, wearFilter, collectionFilter, searchQuery, collectionSearch]);
-
-
+  }, [
+    inventory,
+    typeFilter,
+    wearFilter,
+    collectionFilter,
+    searchQuery,
+    collectionSearch
+  ]);
   return (
-    <>
-      <FilterBar>
+    <div style={{ padding: '2rem' }}>
+      <FilterBar style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
         <input
           type="text"
           placeholder="Rechercher par nom..."
@@ -260,120 +264,137 @@ function InventoryManager({ inventory, priceMap = {} }) {
             <option key={i} value={col}>{col}</option>
           ))}
         </Select>
+
+        <button
+          onClick={handleResetFilters}
+          style={{
+            padding: '0.5rem 1rem',
+            borderRadius: '8px',
+            backgroundColor: '#e2e8f0',
+            border: 'none',
+            cursor: 'pointer',
+            fontWeight: 'bold'
+          }}
+        >
+          🔄 Réinitialiser les filtres
+        </button>
       </FilterBar>
 
+      {/* 📦 Liste des skins */}
       <List>
-        {filteredInventory.map(skin => {
-          const marketPrice = priceMap[`${skin.name} (${skin.wear})`];
-          const statTrakQty = skin.statTrakItems?.length || 0;
-          const regularQty = skin.regularItems?.length || 0;
-          const totalQty = statTrakQty + regularQty;
+        {filteredInventory.length === 0 ? (
+          <p style={{ fontStyle: 'italic', color: '#718096' }}>Aucun skin ne correspond aux filtres.</p>
+        ) : (
+          filteredInventory.map(skin => {
+            const marketPrice = priceMap[`${skin.name} (${skin.wear})`];
+            const statTrakQty = skin.statTrakItems?.length || 0;
+            const regularQty = skin.regularItems?.length || 0;
+            const totalQty = statTrakQty + regularQty;
 
-          const allTradeProtected =
-            (statTrakQty === 0 || skin.statTrakItems.every(item => item.tradeProtected)) &&
-            (regularQty === 0 || skin.regularItems.every(item => item.tradeProtected));
+            const allTradeProtected =
+              (statTrakQty === 0 || skin.statTrakItems.every(item => item.tradeProtected)) &&
+              (regularQty === 0 || skin.regularItems.every(item => item.tradeProtected));
 
-          const isSelected = selectedItemId === skin.id;
+            const isSelected = selectedItemId === skin.id;
 
-          return (
-            <Card
-              key={skin.id}
-              rarity={skin.rarity}
-              onClick={() =>
-                setSelectedItemId(prev => (prev === skin.id ? null : skin.id))
-              }
-            >
-              <ImageWrapper>
-                {allTradeProtected && (() => {
-                  const icon =
-                    skin.statTrakItems?.find(item => item.protectionIcon)?.protectionIcon ||
-                    skin.regularItems?.find(item => item.protectionIcon)?.protectionIcon;
+            return (
+              <Card
+                key={skin.id}
+                rarity={skin.rarity}
+                onClick={() =>
+                  setSelectedItemId(prev => (prev === skin.id ? null : skin.id))
+                }
+              >
+                <ImageWrapper>
+                  {allTradeProtected && (() => {
+                    const icon =
+                      skin.statTrakItems?.find(item => item.protectionIcon)?.protectionIcon ||
+                      skin.regularItems?.find(item => item.protectionIcon)?.protectionIcon;
 
-                  return icon ? (
-                    <ProtectionBadge src={icon} alt="Trade Protected" />
-                  ) : null;
-                })()}
+                    return icon ? (
+                      <ProtectionBadge src={icon} alt="Trade Protected" />
+                    ) : null;
+                  })()}
 
-                <SkinImage
-                  src={skin.imageUrl}
-                  alt={skin.name}
-                  isStatTrak={skin.isStatTrak}
-                />
-                <QuantityBadge>x{totalQty}</QuantityBadge>
-              </ImageWrapper>
+                  <SkinImage
+                    src={skin.imageUrl}
+                    alt={skin.name}
+                    isStatTrak={skin.isStatTrak}
+                  />
+                  <QuantityBadge>x{totalQty}</QuantityBadge>
+                </ImageWrapper>
 
-              <SkinDetails>
-                <SkinTitle rarity={skin.rarity} isStatTrak={skin.isStatTrak}>
-                  {skin.name}
-                </SkinTitle>
+                <SkinDetails>
+                  <SkinTitle rarity={skin.rarity} isStatTrak={skin.isStatTrak}>
+                    {skin.name}
+                  </SkinTitle>
 
-                <p><Label></Label> <Value>{skin.wear}</Value></p>
-                
+                  <p><Label>Usure :</Label> <Value>{skin.wear}</Value></p>
 
-                <p>
-                  <Label>Collection :</Label> <Value>{skin.collection}</Value>
-                  {skin.collectionIMGUrl && (
-                    <CollectionImage
-                      src={skin.collectionIMGUrl}
-                      alt={`Collection ${skin.collection}`}
-                      title={skin.collection}
-                    />
+                  <p>
+                    <Label>Collection :</Label> <Value>{skin.collection}</Value>
+                    {skin.collectionIMGUrl && (
+                      <CollectionImage
+                        src={skin.collectionIMGUrl}
+                        alt={`Collection ${skin.collection}`}
+                        title={skin.collection}
+                      />
+                    )}
+                  </p>
+
+                  <PriceColumn>
+                    <div>
+                      💰 : {totalQty > 0
+                        ? (
+                            [...(skin.statTrakItems || []), ...(skin.regularItems || [])]
+                              .reduce((sum, item) => sum + item.price, 0) / totalQty
+                          ).toFixed(2)
+                        : '—'} €
+                    </div>
+                    <div>
+                      💵 : {marketPrice !== undefined ? marketPrice.toFixed(2) + ' €' : '—'}
+                    </div>
+                  </PriceColumn>
+
+                  {isSelected && (
+                    <>
+                      {statTrakQty > 0 && (
+                        <div style={{ marginTop: '1rem' }}>
+                          <Label>StatTrak™ :</Label>
+                          <ul style={{ paddingLeft: '1rem', margin: 0 }}>
+                            {skin.statTrakItems.map((item, i) => (
+                              <li key={`st-${i}`} style={{ fontSize: '0.9rem' }}>
+                                Float: {item.float.toFixed(8)} – Prix: {item.price.toFixed(2)} €
+                                {item.tradeProtected && ' 🔒'}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {regularQty > 0 && (
+                        <div style={{ marginTop: '1rem' }}>
+                          <Label>Non-StatTrak :</Label>
+                          <ul style={{ paddingLeft: '1rem', margin: 0 }}>
+                            {skin.regularItems.map((item, i) => (
+                              <li key={`reg-${i}`} style={{ fontSize: '0.9rem' }}>
+                                Float: {item.float.toFixed(8)}
+                                {item.tradeProtected && ' 🔒'}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </>
                   )}
-                </p>
-
-                <PriceColumn>
-                  <div>
-                    💰 : {totalQty > 0
-                      ? (
-                          [...(skin.statTrakItems || []), ...(skin.regularItems || [])]
-                            .reduce((sum, item) => sum + item.price, 0) / totalQty
-                        ).toFixed(2)
-                      : '—'} €
-                  </div>
-                  <div>
-                    💵 : {marketPrice !== undefined ? marketPrice.toFixed(2) + ' €' : '—'}
-                  </div>
-                </PriceColumn>
-
-                {isSelected && (
-                  <>
-                    {statTrakQty > 0 && (
-                      <div style={{ marginTop: '1rem' }}>
-                        <Label>StatTrak™ :</Label>
-                        <ul style={{ paddingLeft: '1rem', margin: 0 }}>
-                          {skin.statTrakItems.map((item, i) => (
-                            <li key={`st-${i}`} style={{ fontSize: '0.9rem' }}>
-                              Float: {item.float.toFixed(8)} – Prix: {item.price.toFixed(2)} €
-                              {item.tradeProtected && ' 🔒'}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {regularQty > 0 && (
-                      <div style={{ marginTop: '1rem' }}>
-                        <Label>Non-StatTrak :</Label>
-                        <ul style={{ paddingLeft: '1rem', margin: 0 }}>
-                          {skin.regularItems.map((item, i) => (
-                            <li key={`reg-${i}`} style={{ fontSize: '0.9rem' }}>
-                              Float: {item.float.toFixed(8)}
-                              {item.tradeProtected && ' 🔒'}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </>
-                )}
-              </SkinDetails>
-            </Card>
-          );
-        })}
+                </SkinDetails>
+              </Card>
+            );
+          })
+        )}
       </List>
-
-    </>
+    </div>
   );
 }
 
-export default InventoryManager;
+export default InventoryManager
