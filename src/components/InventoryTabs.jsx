@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import InventoryManager from './InventoryManager';
 
-function InventoryTabs({ inventory, priceMap }) {
+function InventoryTabs({ inventory, priceMap, onExport, onImport, onReset }) {
   const [activeTab, setActiveTab] = useState('inventory');
 
   const tabs = [
@@ -34,7 +34,13 @@ function InventoryTabs({ inventory, priceMap }) {
 
       {/* Contenu de l’onglet actif */}
       {activeTab === 'inventory' && (
-        <InventoryManager inventory={inventory} priceMap={priceMap} />
+        <InventoryManager
+          inventory={inventory}
+          priceMap={priceMap}
+          onExport={onExport}
+          onImport={onImport}
+          onReset={onReset}
+        />
       )}
 
       {activeTab === 'allskins' && (

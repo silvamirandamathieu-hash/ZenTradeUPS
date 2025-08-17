@@ -2,6 +2,8 @@
 import styled from 'styled-components';
 import React, { useState, useMemo } from 'react';
 
+
+
 const List = styled.div`
   display: grid;
   grid-template-columns: 1fr;
@@ -116,12 +118,15 @@ const SkinDetails = styled.div`
 const SkinTitle = styled.h3`
   margin: 0.5rem;
   font-size: 1.5rem;
-  font-weight: 600;
-  color: ${({ rarity, theme }) =>
-    theme.rarityColors[rarity] || theme.colors.accent};
+  font-weight: ${({ isStatTrak }) => (isStatTrak ? 'bold' : 600)};
+  color: ${({ rarity, isStatTrak, theme }) =>
+    isStatTrak
+      ? '#FFA500'
+      : theme.rarityColors[rarity] || theme.colors.accent};
   text-align: left;
+  text-shadow: ${({ isStatTrak }) =>
+    isStatTrak ? '0 0 2px rgba(255, 165, 0, 0.5)' : 'none'};
 `;
-
 
 const Label = styled.span`
   font-weight: 600;
@@ -166,14 +171,13 @@ const Select = styled.select`
   border: 1px solid #ccc;
 `;
 
-function InventoryManager({ inventory, priceMap = {} }) {
+function InventoryManager({ inventory, priceMap = {}, onExport, onImport, onReset }) {
   const [typeFilter, setTypeFilter] = useState('all');
   const [wearFilter, setWearFilter] = useState('all');
   const [collectionFilter, setCollectionFilter] = useState('all');
   const [selectedItemId, setSelectedItemId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [collectionSearch, setCollectionSearch] = useState('');
-  
 
   const handleResetFilters = () => {
     setTypeFilter('all');
@@ -187,7 +191,6 @@ function InventoryManager({ inventory, priceMap = {} }) {
     const unique = new Set(inventory.map(s => s.collection).filter(Boolean));
     return Array.from(unique).sort();
   }, [inventory]);
-  
 
   const filteredInventory = useMemo(() => {
     return inventory.filter(skin => {
@@ -213,8 +216,57 @@ function InventoryManager({ inventory, priceMap = {} }) {
     searchQuery,
     collectionSearch
   ]);
+
   return (
     <div style={{ padding: '2rem' }}>
+      {/* 🧰 Boutons d'action */}
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+        <button
+          onClick={onExport}
+          style={{
+            padding: '0.5rem 1rem',
+            borderRadius: '8px',
+            backgroundColor: '#48bb78',
+            color: '#fff',
+            border: 'none',
+            cursor: 'pointer',
+            fontWeight: 'bold'
+          }}
+        >
+          📤 Exporter
+        </button>
+
+        <button
+          onClick={onImport}
+          style={{
+            padding: '0.5rem 1rem',
+            borderRadius: '8px',
+            backgroundColor: '#4299e1',
+            color: '#fff',
+            border: 'none',
+            cursor: 'pointer',
+            fontWeight: 'bold'
+          }}
+        >
+          📥 Importer
+        </button>
+
+        <button
+          onClick={onReset}
+          style={{
+            padding: '0.5rem 1rem',
+            borderRadius: '8px',
+            backgroundColor: '#f56565',
+            color: '#fff',
+            border: 'none',
+            cursor: 'pointer',
+            fontWeight: 'bold'
+          }}
+        >
+          🗑️ Réinitialiser l’inventaire
+        </button>
+      </div>
+      {/* 🔍 Barre de filtres */}
       <FilterBar style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
         <input
           type="text"
@@ -284,7 +336,9 @@ function InventoryManager({ inventory, priceMap = {} }) {
       {/* 📦 Liste des skins */}
       <List>
         {filteredInventory.length === 0 ? (
-          <p style={{ fontStyle: 'italic', color: '#718096' }}>Aucun skin ne correspond aux filtres.</p>
+          <p style={{ fontStyle: 'italic', color: '#718096' }}>
+            Aucun skin ne correspond aux filtres.
+          </p>
         ) : (
           filteredInventory.map(skin => {
             const marketPrice = priceMap[`${skin.name} (${skin.wear})`];
@@ -326,9 +380,15 @@ function InventoryManager({ inventory, priceMap = {} }) {
                 </ImageWrapper>
 
                 <SkinDetails>
-                  <SkinTitle rarity={skin.rarity} isStatTrak={skin.isStatTrak}>
-                    {skin.name}
+                  <SkinTitle
+                    rarity={skin.rarity}
+                    isStatTrak={skin.isStatTrak}
+                    className={skin.isStatTrak ? 'stattrak-title' : ''}
+                  >
+                    {skin.isStatTrak ? `StatTrak™ ${skin.name}` : skin.name}
                   </SkinTitle>
+
+
 
                   <p><Label>Usure :</Label> <Value>{skin.wear}</Value></p>
 

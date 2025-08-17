@@ -23,32 +23,50 @@ function App() {
     localStorage.setItem('priceMap', JSON.stringify(priceMap));
   }, [priceMap]);
 
-  const handleImport = async e => {
-    setError('');
-    const file = e.target.files[0];
-    if (!file) return;
+  const handleImport = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json';
 
-    const reader = new FileReader();
-    reader.onload = async ev => {
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
       try {
-        const raw = ev.target.result;
-        const data = JSON.parse(raw);
+        const text = await file.text();
+        const data = JSON.parse(text);
 
-        if (!Array.isArray(data)) throw new Error('Le JSON doit être un tableau.');
-
-        await clearInventory();
-        for (const skin of data) {
-          await addSkin(skin);
+        if (!Array.isArray(data)) {
+          alert('Le fichier doit contenir un tableau de skins.');
+          return;
         }
-        setInventory(await getInventory());
+
+        if (data.length === 0) {
+          alert('Le fichier est vide.');
+          return;
+        }
+
+        // 🔍 Optionnel : validation de chaque skin
+        const isValid = data.every(skin =>
+          skin.name && skin.wear && skin.imageUrl
+        );
+
+        if (!isValid) {
+          alert('Certains skins sont mal formatés.');
+          return;
+        }
+
+        setInventory(data); // ✅ Met à jour ton inventaire
+        alert('Inventaire importé avec succès !');
       } catch (err) {
-        setError(`❌ Erreur import : ${err.message}`);
+        console.error('Erreur d’importation :', err);
+        alert('Le fichier est invalide ou corrompu.');
       }
     };
 
-    reader.readAsText(file);
-    e.target.value = '';
+    input.click();
   };
+
 
   const handleExport = () => {
     const json = JSON.stringify(inventory, null, 2);
@@ -98,22 +116,18 @@ function App() {
             {darkMode ? '☀️ Mode clair' : '🌙 Mode sombre'}
           </button>
         </div>
-
-        {/* Boutons d'action */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
-          <button onClick={handleExport}>📤 Exporter</button>
-          <label style={{ cursor: 'pointer' }}>
-            📥 Importer
-            <input type="file" accept=".json,.txt" onChange={handleImport} style={{ display: 'none' }} />
-          </label>
-          <button onClick={handleReset} style={{ color: 'red' }}>🗑️ Réinitialiser</button>
-        </div>
-
         {/* Erreur */}
         {error && <p style={{ color: 'red' }}>{error}</p>}
 
         {/* Inventaire */}
-        <InventoryTabs inventory={inventory} priceMap={priceMap} />
+        <InventoryTabs
+          inventory={inventory}
+          priceMap={priceMap}
+          onExport={handleExport}
+          onImport={handleImport}
+          onReset={handleReset}
+        />
+
       </div>
     </ThemeProvider>
   );
