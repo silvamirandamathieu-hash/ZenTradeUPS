@@ -51,6 +51,23 @@ function AllSkins({ priceMap = {} }) {
     }
   };
 
+  const handleExport = () => {
+    if (!allSkins || allSkins.length === 0) {
+      alert("❌ Aucun skin à exporter.");
+      return;
+    }
+
+    const dataStr = JSON.stringify(allSkins, null, 2); // JSON lisible avec indentation
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "allSkins_export.json"; // nom du fichier
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   //
   // ♻️ Reset DB
   //
@@ -111,6 +128,7 @@ function AllSkins({ priceMap = {} }) {
           <input type="file" accept="application/json" style={{ display: 'none' }} onChange={handleImport} />
         </label>
         <button onClick={handleReset}>♻️ Reset AllSkins</button>
+        <button onClick={handleExport}>💾 Exporter JSON</button>
       </div>
 
       {/* 🔍 Filtres */}
@@ -137,9 +155,9 @@ function AllSkins({ priceMap = {} }) {
         </Select>
         <Select value={raritySearch} onChange={e => setRaritySearch(e.target.value)}>
           <option value="all">Toutes les raretés</option>
-          <option value="Consumer Grade">Consumer Grade</option>
-          <option value="Industrial Grade">Industrial Grade</option>
-          <option value="Mil-Spec Grade">Mil-Spec Grade</option>
+          <option value="Consumer">Consumer Grade</option>
+          <option value="Industrial">Industrial Grade</option>
+          <option value="Mil-spec">Mil-Spec</option>
           <option value="Restricted">Restricted</option>
           <option value="Classified">Classified</option>
           <option value="Covert">Covert</option>

@@ -5,8 +5,8 @@ export const db = new Dexie('cs2TradeUpDB');
 // Définition des tables
 db.version(1).stores({
   inventory: '++id,name,wear,collection,collectionIMGUrl,rarity,isStatTrak,imageUrl',
-  allSkins: '++id,name,wear,rarity,isStatTrak,isST,isSV,collection,price,date,volume,imageUrl',
-  history:  '++id,name,wear,rarity,isStatTrak,isST,isSV,collection,price,date,volume'
+  allSkins: '++id,name,wear,rarity,isStatTrak,isSouvenir,isST,isSV,collection,price,date,volume,imageUrl',
+  history:  '++id,name,wear,rarity,isStatTrak,isSouvenir,isST,isSV,collection,price,date,volume'
 });
 
 //
