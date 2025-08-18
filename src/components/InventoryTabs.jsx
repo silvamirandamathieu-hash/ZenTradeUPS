@@ -1,13 +1,23 @@
+// InventoryTabs.js
+
 import { useState, useRef } from 'react';
 import { CSSTransition, SwitchTransition } from 'react-transition-group';
 import InventoryManager from './InventoryManager';
-import '../styles/InventoryTabs.css'; // ton fichier CSS avec les classes d’animation
+import '../styles/InventoryTabs.css';
 import AllSkins from './AllSkins';
-import cs2Skins from '../cs2_skins.json'; // adapte le chemin
 
-
-
-function InventoryTabs({ inventory, setInventory, priceMap, onExport, onImport, onReset }) {
+function InventoryTabs({
+  inventory,
+  setInventory,
+  allInventory,
+  setAllInventory,
+  priceMap,
+  onExport,
+  onImport,
+  onReset,
+  onAllReset,
+  onAllImport
+}) {
   const [activeTab, setActiveTab] = useState('inventory');
 
   const tabs = [
@@ -15,7 +25,7 @@ function InventoryTabs({ inventory, setInventory, priceMap, onExport, onImport, 
     { key: 'allskins', label: '🗂️ All skins' }
   ];
 
-  const nodeRef = useRef(null); // 👈 ajoute cette ligne avant le return
+  const nodeRef = useRef(null);
 
   const renderTabContent = () => {
     if (activeTab === 'inventory') {
@@ -31,14 +41,12 @@ function InventoryTabs({ inventory, setInventory, priceMap, onExport, onImport, 
     } else if (activeTab === 'allskins') {
       return (
         <AllSkins
-          allSkinsInventory={cs2Skins} // ✅ ici on passe tous les skins
-          setInventory={setInventory}
+          allSkinsInventory={allInventory}   // ✅ allInventory dynamique
+          setAllInventory={setAllInventory} // ✅ nom correct
           priceMap={priceMap}
-          onExport={onExport}
-          onImport={onImport}
-          onReset={onReset}
+          onAllImport={onAllImport}
+          onAllReset={onAllReset}
         />
-
       );
     }
   };
@@ -65,22 +73,20 @@ function InventoryTabs({ inventory, setInventory, priceMap, onExport, onImport, 
           </button>
         ))}
       </div>
+
+      {/* Contenu avec transition */}
       <SwitchTransition>
         <CSSTransition
           key={activeTab}
           timeout={300}
           classNames="fade"
-          nodeRef={nodeRef} // 👈 Ajout ici
+          nodeRef={nodeRef}
         >
           <div ref={nodeRef}>
             {renderTabContent()}
           </div>
         </CSSTransition>
       </SwitchTransition>
-
-
-      {/* Contenu de l’onglet actif */}
-      
     </div>
   );
 }

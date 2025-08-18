@@ -1,60 +1,99 @@
-import React, { useState, useMemo } from 'react';
+// AllSkins.jsx
+
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   List, Card, SkinImage, SkinTitle, SkinDetails,
   Label, Value, PriceColumn, FilterBar, Select, CollectionImage, ImageWrapper
 } from './StyledInventory'; // adapte le chemin
+import { getAllInventory, clearAllInventory, bulkAddAllSkins } from "../db";
 
-import { db } from '../db';
-import cs2Skins from '../cs2_skins.json'; // adapte le chemin
-
-
-function AllSkins({ allSkinsInventory, setInventory, priceMap, onExport, onImport, onReset }) {
+function AllSkins({ priceMap = {} }) {
+  const [allSkins, setAllSkins] = useState([]);
   const [typeFilter, setTypeFilter] = useState('all');
   const [wearFilter, setWearFilter] = useState('all');
   const [collectionFilter, setCollectionFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [raritySearch, setRaritySearch] = useState('all');
 
-  const rarityOrder = [
-    "Consumer Grade", "Industrial Grade", "Mil-Spec Grade", "Restricted",
-    "Classified", "Covert", "Contraband", "Extraordinary"
-  ];
+  //
+  // 📥 Chargement initial depuis IndexedDB
+  //
+  useEffect(() => {
+    loadSkins();
+  }, []);
 
-  const collections = useMemo(() => {
-    const unique = new Set(allSkinsInventory.map(s => s.collection).filter(Boolean));
-    return Array.from(unique).sort();
-  }, [allSkinsInventory]);
+  const loadSkins = async () => {
+    const dbSkins = await getAllInventory();
+    setAllSkins(dbSkins);
+  };
 
-  const filteredInventory = useMemo(() => {
-    return allSkinsInventory.filter(skin => {
-      const matchesType =
-        typeFilter === 'all' ||
-        (typeFilter === 'stattrak' && skin.isST === "StaTrack Available") ||
-        (typeFilter === 'regular' && skin.isST === "N/A" && skin.isSV === "N/A") ||
-        (typeFilter === 'souvenir' && skin.isSV === "Souvenir Available");
+  //
+  // 🧩 Import JSON → IndexedDB
+  //
+  const handleImport = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
 
-      const matchesWear = wearFilter === 'all' || skin.wear === wearFilter;
-      const matchesCollection = collectionFilter === 'all' || skin.collection === collectionFilter;
-      const matchesSearch = searchQuery.trim() === '' || skin.name.toLowerCase().includes(searchQuery.trim().toLowerCase());
-      const matchesRarity = raritySearch === 'all' || skin.rarity === raritySearch;
-
-      return matchesType && matchesWear && matchesCollection && matchesSearch && matchesRarity;
-    });
-  }, [allSkinsInventory, typeFilter, wearFilter, collectionFilter, searchQuery, raritySearch]);
-
-  const handleImportFromJson = async () => {
     try {
-      if (!Array.isArray(cs2Skins)) return alert("Fichier JSON invalide.");
-      setInventory(cs2Skins);
-      await db.inventory.clear();
-      await db.inventory.bulkAdd(cs2Skins);
-      alert("Import depuis JSON réussi !");
+      const text = await file.text();
+      const json = JSON.parse(text);
+
+      if (Array.isArray(json)) {
+        await bulkAddAllSkins(json);
+        await loadSkins();
+        alert("✅ Import terminé !");
+      } else {
+        alert("❌ Le fichier JSON doit contenir un tableau.");
+      }
     } catch (err) {
       console.error(err);
-      alert("Erreur d'importation.");
+      alert("❌ Erreur lors de l'import.");
     }
   };
 
+  //
+  // ♻️ Reset DB
+  //
+  const handleReset = async () => {
+    if (window.confirm("Voulez-vous vraiment vider AllSkins ?")) {
+      await clearAllInventory();
+      setAllSkins([]);
+    }
+  };
+
+  //
+  // 📚 Collections uniques
+  //
+  const collections = useMemo(() => {
+    if (!Array.isArray(allSkins)) return [];
+    const unique = new Set(allSkins.map(s => s.collection).filter(Boolean));
+    return Array.from(unique).sort();
+  }, [allSkins]);
+
+  //
+  // 🔍 Filtres appliqués
+  //
+  const filteredInventory = useMemo(() => {
+    if (!Array.isArray(allSkins)) return [];
+    return allSkins.filter(allSkin => {
+      const matchesType =
+        typeFilter === 'all' ||
+        (typeFilter === 'stattrak' && allSkin.isST === true) ||
+        (typeFilter === 'regular' && !allSkin.isST && !allSkin.isSV) ||
+        (typeFilter === 'souvenir' && allSkin.isSV === true);
+
+      const matchesWear = wearFilter === 'all' || allSkin.wear === wearFilter;
+      const matchesCollection = collectionFilter === 'all' || allSkin.collection === collectionFilter;
+      const matchesSearch = searchQuery.trim() === '' || allSkin.name.toLowerCase().includes(searchQuery.trim().toLowerCase());
+      const matchesRarity = raritySearch === 'all' || allSkin.rarity === raritySearch;
+
+      return matchesType && matchesWear && matchesCollection && matchesSearch && matchesRarity;
+    });
+  }, [allSkins, typeFilter, wearFilter, collectionFilter, searchQuery, raritySearch]);
+
+  //
+  // 🔄 Reset filtres
+  //
   const handleResetFilters = () => {
     setTypeFilter('all');
     setWearFilter('all');
@@ -65,9 +104,13 @@ function AllSkins({ allSkinsInventory, setInventory, priceMap, onExport, onImpor
 
   return (
     <div style={{ padding: '2rem' }}>
-      {/* 🧰 Boutons */}
+      {/* 🧰 Actions */}
       <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
-        <button onClick={handleImportFromJson}>📥 Importer depuis JSON</button>
+        <label>
+          📥 Importer JSON
+          <input type="file" accept="application/json" style={{ display: 'none' }} onChange={handleImport} />
+        </label>
+        <button onClick={handleReset}>♻️ Reset AllSkins</button>
       </div>
 
       {/* 🔍 Filtres */}
@@ -94,9 +137,9 @@ function AllSkins({ allSkinsInventory, setInventory, priceMap, onExport, onImpor
         </Select>
         <Select value={raritySearch} onChange={e => setRaritySearch(e.target.value)}>
           <option value="all">Toutes les raretés</option>
-          <option value="Consumer">Consumer</option>
-          <option value="Industrial">Industrial</option>
-          <option value="Mil-spec">Mil-spec</option>
+          <option value="Consumer Grade">Consumer Grade</option>
+          <option value="Industrial Grade">Industrial Grade</option>
+          <option value="Mil-Spec Grade">Mil-Spec Grade</option>
           <option value="Restricted">Restricted</option>
           <option value="Classified">Classified</option>
           <option value="Covert">Covert</option>
@@ -113,23 +156,23 @@ function AllSkins({ allSkinsInventory, setInventory, priceMap, onExport, onImpor
         {filteredInventory.length === 0 ? (
           <p>Aucun skin trouvé.</p>
         ) : (
-          filteredInventory.map((skin, i) => {
-            const price = priceMap[`${skin.name} (${skin.wear})`] || 'N/A';
+          filteredInventory.map((allSkin, i) => {
+            const price = priceMap[`${allSkin.name} (${allSkin.wear})`] || allSkin.price || 'N/A';
             return (
-              <Card key={i} rarity={skin.rarity}>
+              <Card key={i} rarity={allSkin.rarity}>
                 <ImageWrapper>
-                  <SkinImage src={skin.imageUrl} alt={skin.name} isStatTrak={skin.isST === "StaTrack Available"} />
+                  <SkinImage src={allSkin.imageUrl} alt={allSkin.name} isStatTrak={allSkin.isST} />
                 </ImageWrapper>
                 <SkinDetails>
-                  <SkinTitle rarity={skin.rarity} isStatTrak={skin.isST === "StaTrack Available"}>
-                    {skin.isST === "StaTrack Available" && <span style={{ fontSize: '1rem', color: '#FFA500', marginRight: '0.5rem' }}>StatTrak™</span>}
-                    {skin.name}
-                    {skin.collectionImage && <CollectionImage src={skin.collectionImage} />}
+                  <SkinTitle rarity={allSkin.rarity} isStatTrak={allSkin.isST}>
+                    {allSkin.isST && <span style={{ fontSize: '1rem', color: '#FFA500', marginRight: '0.5rem' }}>StatTrak™</span>}
+                    {allSkin.name}
+                    {allSkin.collectionImage && <CollectionImage src={allSkin.collectionImage} />}
                   </SkinTitle>
 
-                  <p><Label>Usure:</Label> <Value>{skin.wear}</Value></p>
-                  <p><Label>Collection:</Label> <Value>{skin.collection}</Value></p>
-                  <p><Label>Rareté:</Label> <Value>{skin.rarity}</Value></p>
+                  <p><Label>Usure:</Label> <Value>{allSkin.wear}</Value></p>
+                  <p><Label>Collection:</Label> <Value>{allSkin.collection}</Value></p>
+                  <p><Label>Rareté:</Label> <Value>{allSkin.rarity}</Value></p>
                 </SkinDetails>
                 <PriceColumn>
                   <span>{price} €</span>

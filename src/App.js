@@ -1,28 +1,28 @@
+// App.js
+
 import React, { useState, useEffect } from 'react';
-import { getInventory, clearInventory, db } from './db';
+import { getInventory, getAllInventory, clearInventory, clearAllInventory, db } from './db';
 import InventoryTabs from './components/InventoryTabs';
 import { ThemeProvider } from 'styled-components';
 import { lightTheme, darkTheme } from './styles/theme';
-import AllSkins from './components/AllSkins';
-import allSkinsData from './cs2_skins.json'; // ou autre chemin
 
 function App() {
   const [inventory, setInventory] = useState([]);
+  const [allInventory, setAllInventory] = useState([]);
   const [error, setError] = useState('');
   const [priceMap, setPriceMap] = useState(() => {
     const saved = localStorage.getItem('priceMap');
     return saved ? JSON.parse(saved) : {};
   });
   const [darkMode, setDarkMode] = useState(false);
-  
 
-
+  // Charger l’inventaire principal
   useEffect(() => {
     async function loadInitialInventory() {
       const existingInventory = await getInventory();
       if (existingInventory.length === 0) {
-        setInventory(allSkinsData);
-        await db.inventory.bulkAdd(allSkinsData);
+        setInventory([]); // au lieu de inventory (qui est vide de toute façon)
+        await db.inventory.bulkAdd([]);
       } else {
         setInventory(existingInventory);
       }
@@ -30,6 +30,21 @@ function App() {
     loadInitialInventory();
   }, []);
 
+  // Charger AllSkins
+  useEffect(() => {
+    async function loadInitialAllInventory() {
+      const existingAllInventory = await getAllInventory();
+      if (existingAllInventory.length === 0) {
+        setAllInventory([]);
+        await db.allSkins.bulkAdd([]);
+      } else {
+        setAllInventory(existingAllInventory);
+      }
+    }
+    loadInitialAllInventory();
+  }, []);
+
+  // Import Inventaire principal
   const handleImport = () => {
     const input = document.createElement('input');
     input.type = 'file';
@@ -47,36 +62,22 @@ function App() {
           alert('Le fichier doit contenir un tableau de skins.');
           return;
         }
-
         if (data.length === 0) {
           alert('Le fichier est vide.');
           return;
         }
 
-        // 🔍 Optionnel : validation de chaque skin
         const isValid = data.every(skin =>
           skin.name && skin.wear && skin.imageUrl
         );
-
         if (!isValid) {
           alert('Certains skins sont mal formatés.');
           return;
         }
-    //  Exemple de mapping si json non conforme a db.js
-      //const mappedData = data.map(skin => ({
-        //name: `${skin.weapon} | ${skin.skin_name}`,
-        //imageUrl: skin.image,
-        //isStatTrak: skin.stattrak ?? false,
-        //wear: skin.wear ?? "Field-Tested",
-        //rarity: skin.rarity ?? "Unknown",
-        //collection: skin.collection ?? "Inconnue",
-        //float: skin.float ?? 0,
-        //price: skin.price ?? 0
-      //}));
 
         setInventory(data);
         await db.inventory.clear();
-        await db.inventory.bulkAdd(data); // ✅ Met à jour ton inventaire
+        await db.inventory.bulkAdd(data);
         alert('Inventaire importé avec succès !');
       } catch (err) {
         console.error('Erreur d’importation :', err);
@@ -87,7 +88,51 @@ function App() {
     input.click();
   };
 
+  // Import AllSkins
+  const handleAllSkinsImport = () => {
+    const inputall = document.createElement('input');
+    inputall.type = 'file';
+    inputall.accept = 'application/json';
 
+    inputall.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      try {
+        const textall = await file.text();
+        const dataall = JSON.parse(textall);
+
+        if (!Array.isArray(dataall)) {
+          alert('Le fichier doit contenir un tableau de skins.');
+          return;
+        }
+        if (dataall.length === 0) {
+          alert('Le fichier est vide.');
+          return;
+        }
+
+        const isValid = dataall.every(allSkin =>
+          allSkin.name && allSkin.wear && allSkin.imageUrl
+        );
+        if (!isValid) {
+          alert('Certains skins sont mal formatés.');
+          return;
+        }
+
+        setAllInventory(dataall);
+        await db.allSkins.clear();
+        await db.allSkins.bulkAdd(dataall);
+        alert('AllSkins importé avec succès !');
+      } catch (err) {
+        console.error('Erreur d’importation AllSkins :', err);
+        alert('Le fichier est invalide ou corrompu.');
+      }
+    };
+
+    inputall.click();
+  };
+
+  // Export inventaire
   const handleExport = () => {
     const json = JSON.stringify(inventory, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
@@ -99,11 +144,19 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
+  // Reset inventaire
   const handleReset = async () => {
     await clearInventory();
     setInventory([]);
+    alert('Inventaire réinitialisé !');
   };
 
+  // Reset AllSkins
+  const handleAllReset = async () => {
+    await clearAllInventory();
+    setAllInventory([]);
+    alert('AllSkins réinitialisé !');
+  };
 
   return (
     <ThemeProvider theme={darkMode ? darkTheme : lightTheme}>
@@ -137,17 +190,22 @@ function App() {
         {/* ❗ Erreur */}
         {error && <p style={{ color: 'red' }}>{error}</p>}
 
-        {/* 📦 Inventaire */}
+        {/* 📦 Inventaire + AllSkins */}
         <InventoryTabs
           inventory={inventory}
-          setInventory={setInventory} // ✅ nouvelle prop
+          setInventory={setInventory}
+          allInventory={allInventory}          // ✅ correction
+          setAllInventory={setAllInventory}    // ✅ conserve
           priceMap={priceMap}
           onExport={handleExport}
           onReset={handleReset}
           onImport={handleImport}
+          onAllReset={handleAllReset}
+          onAllImport={handleAllSkinsImport}
         />
       </div>
     </ThemeProvider>
   );
 }
+
 export default App;
