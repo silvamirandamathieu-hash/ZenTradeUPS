@@ -1,13 +1,47 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { CSSTransition, SwitchTransition } from 'react-transition-group';
 import InventoryManager from './InventoryManager';
+import '../styles/InventoryTabs.css'; // ton fichier CSS avec les classes d’animation
+import AllSkins from './AllSkins';
+import cs2Skins from '../cs2_skins.json'; // adapte le chemin
 
-function InventoryTabs({ inventory, priceMap, onExport, onImport, onReset }) {
+
+
+function InventoryTabs({ inventory, setInventory, priceMap, onExport, onImport, onReset }) {
   const [activeTab, setActiveTab] = useState('inventory');
 
   const tabs = [
     { key: 'inventory', label: '🎒 Mon inventaire' },
     { key: 'allskins', label: '🗂️ All skins' }
   ];
+
+  const nodeRef = useRef(null); // 👈 ajoute cette ligne avant le return
+
+  const renderTabContent = () => {
+    if (activeTab === 'inventory') {
+      return (
+        <InventoryManager
+          inventory={inventory}
+          priceMap={priceMap}
+          onExport={onExport}
+          onImport={onImport}
+          onReset={onReset}
+        />
+      );
+    } else if (activeTab === 'allskins') {
+      return (
+        <AllSkins
+          allSkinsInventory={cs2Skins} // ✅ ici on passe tous les skins
+          setInventory={setInventory}
+          priceMap={priceMap}
+          onExport={onExport}
+          onImport={onImport}
+          onReset={onReset}
+        />
+
+      );
+    }
+  };
 
   return (
     <div style={{ padding: '2rem' }}>
@@ -31,23 +65,22 @@ function InventoryTabs({ inventory, priceMap, onExport, onImport, onReset }) {
           </button>
         ))}
       </div>
+      <SwitchTransition>
+        <CSSTransition
+          key={activeTab}
+          timeout={300}
+          classNames="fade"
+          nodeRef={nodeRef} // 👈 Ajout ici
+        >
+          <div ref={nodeRef}>
+            {renderTabContent()}
+          </div>
+        </CSSTransition>
+      </SwitchTransition>
+
 
       {/* Contenu de l’onglet actif */}
-      {activeTab === 'inventory' && (
-        <InventoryManager
-          inventory={inventory}
-          priceMap={priceMap}
-          onExport={onExport}
-          onImport={onImport}
-          onReset={onReset}
-        />
-      )}
-
-      {activeTab === 'allskins' && (
-        <div style={{ fontStyle: 'italic', color: '#718096' }}>
-          🧪 Placeholder pour "All skins" – Tu pourras afficher ici tous les skins disponibles.
-        </div>
-      )}
+      
     </div>
   );
 }

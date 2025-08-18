@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { getInventory, addSkin, clearInventory } from './db';
+import { getInventory, clearInventory, db } from './db';
 import InventoryTabs from './components/InventoryTabs';
 import { ThemeProvider } from 'styled-components';
 import { lightTheme, darkTheme } from './styles/theme';
-import { db } from './db';
+import AllSkins from './components/AllSkins';
+import allSkinsData from './cs2_skins.json'; // ou autre chemin
 
 function App() {
   const [inventory, setInventory] = useState([]);
@@ -17,7 +18,16 @@ function App() {
 
 
   useEffect(() => {
-    getInventory().then(setInventory);
+    async function loadInitialInventory() {
+      const existingInventory = await getInventory();
+      if (existingInventory.length === 0) {
+        setInventory(allSkinsData);
+        await db.inventory.bulkAdd(allSkinsData);
+      } else {
+        setInventory(existingInventory);
+      }
+    }
+    loadInitialInventory();
   }, []);
 
   const handleImport = () => {
@@ -52,6 +62,17 @@ function App() {
           alert('Certains skins sont mal formatés.');
           return;
         }
+    //  Exemple de mapping si json non conforme a db.js
+      //const mappedData = data.map(skin => ({
+        //name: `${skin.weapon} | ${skin.skin_name}`,
+        //imageUrl: skin.image,
+        //isStatTrak: skin.stattrak ?? false,
+        //wear: skin.wear ?? "Field-Tested",
+        //rarity: skin.rarity ?? "Unknown",
+        //collection: skin.collection ?? "Inconnue",
+        //float: skin.float ?? 0,
+        //price: skin.price ?? 0
+      //}));
 
         setInventory(data);
         await db.inventory.clear();
@@ -83,9 +104,6 @@ function App() {
     setInventory([]);
   };
 
-  const handleMarketImport = (newPrices) => {
-    setPriceMap(prev => ({ ...prev, ...newPrices }));
-  };
 
   return (
     <ThemeProvider theme={darkMode ? darkTheme : lightTheme}>
@@ -98,7 +116,7 @@ function App() {
       }}>
         <h1>🎮 Gestionnaire de Skins CS</h1>
 
-        {/* Toggle mode */}
+        {/* 🌗 Toggle mode */}
         <div style={{ marginBottom: 20 }}>
           <button
             onClick={() => setDarkMode(prev => !prev)}
@@ -108,28 +126,28 @@ function App() {
               borderRadius: '8px',
               border: 'none',
               background: darkMode ? '#334155' : '#e2e8f0',
-              color: darkMode ? '#e8ecefff' : '#1f2937',
+              color: darkMode ? '#e8ecef' : '#1f2937',
               cursor: 'pointer'
             }}
           >
             {darkMode ? '☀️ Mode clair' : '🌙 Mode sombre'}
           </button>
         </div>
-        {/* Erreur */}
+
+        {/* ❗ Erreur */}
         {error && <p style={{ color: 'red' }}>{error}</p>}
 
-        {/* Inventaire */}
+        {/* 📦 Inventaire */}
         <InventoryTabs
           inventory={inventory}
+          setInventory={setInventory} // ✅ nouvelle prop
           priceMap={priceMap}
           onExport={handleExport}
-          onImport={handleImport}
           onReset={handleReset}
+          onImport={handleImport}
         />
-
       </div>
     </ThemeProvider>
   );
 }
-
 export default App;

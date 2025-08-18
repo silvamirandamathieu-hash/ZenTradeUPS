@@ -207,11 +207,6 @@ function InventoryManager({ inventory, priceMap = {}, onExport, onImport, onRese
     return Array.from(unique).sort();
   }, [inventory]);
 
-  const rarity = useMemo(() => {
-    const unique2 = new Set(inventory.map(s => s.rarity).filter(Boolean));
-    return Array.from(unique2).sort();
-  }, [inventory]);
-
   const filteredInventory = useMemo(() => {
     return inventory.filter(skin => {
       const matchesType =
