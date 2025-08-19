@@ -109,22 +109,22 @@ function AllSkins({ priceMap = {} }) {
     loadSkins();
   }, []);
 
-  const normalizeRarity = (rarity) => {
-  const map = {
-    'Mil-spec Grade': 'Mil-Spec Grade',
-    'Consumer Grade': 'Consumer',
-    'Industrial Grade': 'Industrial',
-    'Mil-spec': 'Mil-Spec Grade',
-    'Consumer ': 'Consumer Grade',
-    'Industrial': 'Industrial Grade',
-    'Restricted': 'Restricted',
-    'Classified': 'Classified',
-    'Covert': 'Covert',
-    'Contraband': 'Contraband',
-    'Rare': 'Rare'
+  const normalizedRarity = (rarity) => {
+    const map = {
+      'Mil-spec Grade': 'Mil-Spec Grade',
+      'Consumer Grade': 'Consumer',
+      'Industrial Grade': 'Industrial',
+      'Mil-spec': 'Mil-Spec Grade',
+      'Consumer ': 'Consumer Grade',
+      'Industrial': 'Industrial Grade',
+      'Restricted': 'Restricted',
+      'Classified': 'Classified',
+      'Covert': 'Covert',
+      'Contraband': 'Contraband',
+      'Rare': 'Rare'
+    };
+    return map[rarity] || rarity;
   };
-  return map[rarity] || rarity;
-};
 
   const loadSkins = async () => {
     const dbSkins = await getAllInventory();
@@ -297,7 +297,70 @@ function AllSkins({ priceMap = {} }) {
       setAllSkins([]);
     }
   };
-  
+    const handlePriceUpdate = async () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'application/json';
+      input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+          const text = await file.text();
+          const parsed = JSON.parse(text);
+
+          const priceData = Array.isArray(parsed.items) ? parsed.items : [];
+
+          if (priceData.length === 0) {
+            throw new Error('Aucun item trouvé dans le fichier JSON.');
+          }
+
+          // 🔍 Fonction pour extraire les infos du market_hash_name
+          const parseMarketHashName = (fullName) => {
+            const isStatTrak = fullName.startsWith('StatTrak™');
+            const isSouvenir = fullName.startsWith('Souvenir');
+            const baseName = fullName
+              .replace(/^StatTrak™ /, '')
+              .replace(/^Souvenir /, '')
+              .trim();
+            const wearMatch = baseName.match(/\(([^)]+)\)$/);
+            const wear = wearMatch ? wearMatch[1] : null;
+            const name = wear ? baseName.replace(/\s*\([^)]+\)$/, '') : baseName;
+            return { name, wear, isStatTrak, isSouvenir };
+          };
+
+          const updatedSkins = allSkins.map(skin => {
+            const match = priceData.find(p => {
+              const { name, wear, isStatTrak, isSouvenir } = parseMarketHashName(p.market_hash_name);
+              return (
+                name === skin.name &&
+                wear === skin.wear &&
+                isStatTrak === !!skin.isStatTrak &&
+                isSouvenir === !!skin.isSouvenir
+              );
+            });
+
+            if (match) {
+              return {
+                ...skin,
+                price: parseFloat(match.price),
+                volume: parseInt(match.volume)
+              };
+            }
+            return skin;
+          });
+
+          await clearAllInventory();
+          await bulkAddAllSkins(updatedSkins);
+          await loadSkins();
+          alert(`✅ Prix mis à jour pour ${priceData.length} items.`);
+        } catch (err) {
+          console.error('Erreur lors de la mise à jour des prix:', err);
+          alert('❌ Fichier invalide ou erreur de parsing.');
+        }
+      };
+      input.click();
+    };
 
   //
   // 📚 Collections uniques
@@ -400,6 +463,7 @@ function AllSkins({ priceMap = {} }) {
           <input type="file" accept="application/json" style={{ display: 'none' }} onChange={handleImport} />
         </label>
         <button onClick={updateSkinsFromScrapedData}>🧬 Update IMG + ST/SV</button>
+        <button onClick={handlePriceUpdate}>💰 Update Price</button>
         <button onClick={handleExport}>💾 Exporter JSON</button>
         <button onClick={handleReset}>♻️ Reset AllSkins</button>
       </div>
@@ -520,7 +584,7 @@ function AllSkins({ priceMap = {} }) {
             };
 
             const mainSkin = group[0];
-            const normalizedRarity = normalizeRarity(mainSkin.rarity);
+            const normalizeRarity = normalizedRarity(mainSkin.rarity);
             const getWearValue = (wear) => wearOrder[wear?.trim()] ?? 99;
 
             const sortedVariants = [...group].sort(
@@ -533,17 +597,16 @@ function AllSkins({ priceMap = {} }) {
             );
 
             return (
-              <Card
-                key={mainSkin.id}
-                $rarity={mainSkin.rarity}
-              >
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  gap: '2rem',
-                  flexWrap: 'wrap',
-                  width: '100%'
-                }}>
+              <Card key={mainSkin.id} $rarity={mainSkin.rarity}>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    gap: '2rem',
+                    flexWrap: 'wrap',
+                    width: '100%',
+                  }}
+                >
                   {/* 📸 Image à gauche */}
                   <ImageWrapper>
                     <SkinImage
@@ -556,9 +619,7 @@ function AllSkins({ priceMap = {} }) {
 
                   {/* 📋 Infos à droite */}
                   <div style={{ flex: 1, minWidth: '250px' }}>
-                    <SkinTitle
-                      $rarity={mainSkin.rarity}
-                    >
+                    <SkinTitle $rarity={mainSkin.rarity}>
                       {mainSkin.isStatTrak && (
                         <span style={{ color: '#FFA500', marginRight: '0.5rem' }}>StatTrak™</span>
                       )}
@@ -568,46 +629,71 @@ function AllSkins({ priceMap = {} }) {
                       {mainSkin.name}
                     </SkinTitle>
 
-                    <p><Label>Collection:</Label> <Value>{mainSkin.collection}</Value></p>
-                    <p><Label>Rareté:</Label> <Value>{mainSkin.rarity}</Value></p>
+                    <p>
+                      <Label>Collection:</Label> <Value>{mainSkin.collection}</Value>
+                    </p>
+                    <p>
+                      <Label>Rareté:</Label> <Value>{mainSkin.rarity}</Value>
+                    </p>
 
                     {/* 🧩 Liste verticale des variantes */}
-                    <div style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0.5rem',
-                      marginTop: '1rem',
-                      backgroundColor: '#1c1f2b',
-                      padding: '1rem',
-                      borderRadius: '8px',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      width: '100%'
-                    }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.5rem',
+                        marginTop: '1rem',
+                        backgroundColor: '#1c1f2b',
+                        padding: '1rem',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        width: '100%',
+                      }}
+                    >
                       {filteredVariants.length === 0 ? (
                         <p style={{ color: '#888', fontStyle: 'italic' }}>
                           Aucune variante ne correspond à la recherche.
                         </p>
                       ) : (
-                        filteredVariants.map((variant, index) => (
-                          <div
-                            key={`${variant.name}-${variant.wear}-${index}`}
-                            style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              fontSize: '1.1rem',
-                              padding: '0.25rem 0.5rem',
-                              borderBottom: '1px solid rgba(255,255,255,0.05)',
-                              color: colorMap[variant.wear?.trim()] ?? '#ccc',
-                              transition: 'background 0.2s ease',
-                              cursor: 'default'
-                            }}
-                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                          >
-                            <span><strong>{variant.wear ?? 'Sans usure'}</strong></span>
-                            <span>{priceMap[`${variant.name} (${variant.wear})`] || variant.price || 'N/A'} €</span>
-                          </div>
-                        ))
+                        filteredVariants.map((variant, index) => {
+                          const key = `${variant.name} (${variant.wear})`;
+                          const price = priceMap[key] || variant.price || 'N/A';
+                          const volume = variant.volume !== undefined ? `${variant.volume} offres` : '—';
+
+                          return (
+                            <div
+                              key={`${variant.name}-${variant.wear}-${index}`}
+                              style={{
+                                display: 'grid',
+                                gridTemplateColumns: '1fr auto 1fr',
+                                alignItems: 'center',
+                                fontSize: '1.1rem',
+                                padding: '0.25rem 0.5rem',
+                                borderBottom: '1px solid rgba(255,255,255,0.05)',
+                                color: colorMap[variant.wear?.trim()] ?? '#ccc',
+                                transition: 'background 0.2s ease',
+                                cursor: 'default',
+                              }}
+                              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
+                              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                            >
+                              {/* 🧼 Usure à gauche */}
+                              <span style={{ textAlign: 'left' }}>
+                                <strong>{variant.wear ?? 'Sans usure'}</strong>
+                              </span>
+
+                              {/* 📊 Volume centré */}
+                              <span style={{ textAlign: 'center', color: '#aaa', fontSize: '0.95rem' }}>
+                                {variant.volume !== undefined ? `${variant.volume} offres` : '—'}
+                              </span>
+
+                              {/* 💰 Prix à droite */}
+                              <span style={{ textAlign: 'right' }}>
+                                {priceMap[`${variant.name} (${variant.wear})`] || variant.price || 'N/A'} €
+                              </span>
+                            </div>
+                          );
+                        })
                       )}
                     </div>
                   </div>
