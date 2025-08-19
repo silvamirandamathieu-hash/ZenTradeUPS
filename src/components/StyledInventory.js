@@ -87,10 +87,20 @@ export const SkinImage = styled.img`
   border-radius: 12px;
   object-fit: cover;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  border: ${({ isStatTrak, theme }) =>
-    isStatTrak ? `3px solid ${theme.colors.stattrak}` : 'none'};
-  box-shadow: ${({ isStatTrak }) =>
-    isStatTrak ? '0 0 12px 4px rgba(255,165,0,0.6)' : '0 4px 12px rgba(0,0,0,0.1)'};
+  border: ${({ isStatTrak, isSouvenir, theme }) =>
+    isStatTrak
+      ? `3px solid ${theme.colors.stattrak}`
+      : isSouvenir
+      ? `3px solid ${theme.colors.souvenir}`
+      : 'none'};
+
+  box-shadow: ${({ isStatTrak, isSouvenir }) =>
+    isStatTrak
+      ? '0 0 12px 4px rgba(255,165,0,0.6)'
+      : isSouvenir
+      ? '0 0 12px 4px rgba(214,228,18,0.6)' // jaune souvenir
+      : '0 4px 12px rgba(0,0,0,0.1)'};
+
 
   @media (max-width: 600px) {
     width: 100%;

@@ -14,7 +14,7 @@ function App() {
     const saved = localStorage.getItem('priceMap');
     return saved ? JSON.parse(saved) : {};
   });
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
 
   // Charger l’inventaire principal
   useEffect(() => {

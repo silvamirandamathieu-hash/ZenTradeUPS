@@ -80,6 +80,19 @@ const scrapedData = [
   ...XM1014,
   ...ZeusX27
 ];
+const normalizeRarity = (rarity) => {
+  const map = {
+    'Mil-spec': 'Mil-Spec Grade',
+    'Consumer': 'Consumer Grade',
+    'Industrial': 'Industrial Grade',
+    'Restricted': 'Restricted',
+    'Classified': 'Classified',
+    'Covert': 'Covert',
+    'Contraband': 'Contraband',
+    'Rare': 'Rare'
+  };
+  return map[rarity] || rarity;
+};
 
 function AllSkins({ priceMap = {} }) {
   const [allSkins, setAllSkins] = useState([]);
@@ -151,7 +164,11 @@ function AllSkins({ priceMap = {} }) {
 
       for (const wear of uniqueWears) {
         const baseSkin = existingSkins.find(s => s.name.trim() === name.trim() && s.wear === wear);
-        if (!baseSkin) continue;
+        if (!baseSkin) {
+          console.log(`❌ Skin ignoré : ${name} (${wear}) — aucune correspondance trouvée dans l'inventaire existant`);
+          continue;
+        }
+
 
         const commonFields = {
           name,
@@ -308,7 +325,7 @@ function AllSkins({ priceMap = {} }) {
       <p style={{
         fontStyle: 'italic',
         marginBottom: '1rem',
-        backgroundColor: '#f4f4f4',
+        backgroundColor: '#2d385faa',
         padding: '0.5rem 1rem',
         borderRadius: '6px'
       }}>
@@ -360,13 +377,14 @@ function AllSkins({ priceMap = {} }) {
         ) : (
           filteredInventory.map((allSkin, i) => {
             const price = priceMap[`${allSkin.name} (${allSkin.wear})`] || allSkin.price || 'N/A';
+            const normalizedRarity = normalizeRarity(allSkin.rarity);
             return (
-              <Card key={i} rarity={allSkin.rarity}>
+              <Card key={i} rarity={normalizedRarity}>
                 <ImageWrapper>
-                  <SkinImage src={allSkin.imageUrl} alt={allSkin.name} isStatTrak={allSkin.isStatTrak} />
+                  <SkinImage src={allSkin.imageUrl} alt={allSkin.name} isStatTrak={allSkin.isStatTrak} isSouvenir={allSkin.isSouvenir}/>
                 </ImageWrapper>
                 <SkinDetails>
-                  <SkinTitle rarity={allSkin.rarity} isStatTrak={allSkin.isST}>
+                  <SkinTitle rarity={normalizedRarity} isStatTrak={allSkin.isST}>
                     {allSkin.isStatTrak && <span style={{ fontSize: '1rem', color: '#FFA500', marginRight: '0.5rem' }}>StatTrak™</span>}
                     {allSkin.isSouvenir && <span style={{ fontSize: '1rem', color: '#d6e412ff', marginRight: '0.5rem' }}>Souvenir</span>}
                     {allSkin.name}

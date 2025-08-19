@@ -41,6 +41,7 @@ export const darkTheme = {
     text: '#f1f5f9',
     accent: '#60a5fa',
     stattrak: '#fbbf24',
+    souvenir: '#d9ea48ff',
     textOnBadge: '#ffffff',
   },
 
