@@ -34,7 +34,7 @@ export async function bulkAddInventory(skins) {
 }
 export async function bulkAddAllSkins(skins) {
   if (!Array.isArray(skins)) throw new Error('Données invalides');
-  return db.allSkins.bulkAdd(skins);
+  return db.allSkins.bulkPut(skins);
 }
 
 export async function clearInventory() {

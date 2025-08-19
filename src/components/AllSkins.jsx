@@ -7,6 +7,80 @@ import {
 } from './StyledInventory'; // adapte le chemin
 import { getAllInventory, clearAllInventory, bulkAddAllSkins } from "../db";
 
+import AK47 from '../scrapedskins/AK-47_img.json';
+import AUG from '../scrapedskins/AUG_img.json';
+import AWP from '../scrapedskins/AWP_img.json';
+import CZ75Auto from '../scrapedskins/CZ75-Auto_img.json';
+import DesertEagle from '../scrapedskins/Desert Eagle_img.json';
+import DualBerettas from '../scrapedskins/Dual Berettas_img.json';
+import FAMAS from '../scrapedskins/FAMAS_img.json';
+import FiveSeveN from '../scrapedskins/Five-SeveN_img.json';
+import G3SG1 from '../scrapedskins/G3SG1_img.json';
+import GalilAR from '../scrapedskins/Galil AR_img.json';
+import Glock18 from '../scrapedskins/Glock-18_img.json';
+import M4A1S from '../scrapedskins/M4A1-S_img.json';
+import M4A4 from '../scrapedskins/M4A4_img.json';
+import M249 from '../scrapedskins/M249_img.json';
+import MAC10 from '../scrapedskins/MAC-10_img.json';
+import MAG7 from '../scrapedskins/MAG-7_img.json';
+import MP5SD from '../scrapedskins/MP5-SD_img.json';
+import MP7 from '../scrapedskins/MP7_img.json';
+import MP9 from '../scrapedskins/MP9_img.json';
+import Negev from '../scrapedskins/Negev_img.json';
+import Nova from '../scrapedskins/Nova_img.json';
+import P90 from '../scrapedskins/P90_img.json';
+import P250 from '../scrapedskins/P250_img.json';
+import P2000 from '../scrapedskins/P2000_img.json';
+import PPBizon from '../scrapedskins/PP-Bizon_img.json';
+import R8Revolver from '../scrapedskins/R8 Revolver_img.json';
+import SawedOff from '../scrapedskins/Sawed-Off_img.json';
+import SCAR20 from '../scrapedskins/SCAR-20_img.json';
+import SG553 from '../scrapedskins/SG 553_img.json';
+import SSG08 from '../scrapedskins/SSG 08_img.json';
+import Tec9 from '../scrapedskins/Tec-9_img.json';
+import UMP45 from '../scrapedskins/UMP-45_img.json';
+import USPS from '../scrapedskins/USP-S_img.json';
+import XM1014 from '../scrapedskins/XM1014_img.json';
+import ZeusX27 from '../scrapedskins/Zeus x27_img.json';
+
+const scrapedData = [
+  ...AK47,
+  ...AUG,
+  ...AWP,
+  ...CZ75Auto,
+  ...DesertEagle,
+  ...DualBerettas,
+  ...FAMAS,
+  ...FiveSeveN,
+  ...G3SG1,
+  ...GalilAR,
+  ...Glock18,
+  ...M4A1S,
+  ...M4A4,
+  ...M249,
+  ...MAC10,
+  ...MAG7,
+  ...MP5SD,
+  ...MP7,
+  ...MP9,
+  ...Negev,
+  ...Nova,
+  ...P90,
+  ...P250,
+  ...P2000,
+  ...PPBizon,
+  ...R8Revolver,
+  ...SawedOff,
+  ...SCAR20,
+  ...SG553,
+  ...SSG08,
+  ...Tec9,
+  ...UMP45,
+  ...USPS,
+  ...XM1014,
+  ...ZeusX27
+];
+
 function AllSkins({ priceMap = {} }) {
   const [allSkins, setAllSkins] = useState([]);
   const [typeFilter, setTypeFilter] = useState('all');
@@ -26,6 +100,104 @@ function AllSkins({ priceMap = {} }) {
     const dbSkins = await getAllInventory();
     setAllSkins(dbSkins);
   };
+    const generateMissingRegularVariants = async () => {
+    const existingSkins = await getAllInventory();
+    const newRegulars = [];
+
+    for (const skin of existingSkins) {
+      if (skin.isStatTrak || skin.isSouvenir) {
+        const alreadyExists = existingSkins.some(s =>
+          s.name === skin.name &&
+          s.wear === skin.wear &&
+          !s.isStatTrak &&
+          !s.isSouvenir
+        );
+
+        if (!alreadyExists) {
+          newRegulars.push({
+            ...skin,
+            isStatTrak: false,
+            isSouvenir: false,
+          });
+        }
+      }
+    }
+
+    if (newRegulars.length === 0) {
+      alert("✅ Toutes les variantes regular existent déjà !");
+      return;
+    }
+
+    await bulkAddAllSkins(newRegulars);
+    await loadSkins();
+    alert(`✅ ${newRegulars.length} variantes regular ajoutées !`);
+  };
+
+  const updateSkinsFromScrapedData = async () => {
+    if (!window.confirm("Mettre à jour les images et variantes ST/SV ?")) return;
+
+    const existingSkins = await getAllInventory();
+    const updatedSkins = [];
+
+    for (const scraped of scrapedData) {
+      const { name, imageUrl, isST, isSV, rarity } = scraped;
+
+      // Trouver les usures existantes pour ce skin
+      const wearVariants = existingSkins
+        .filter(s => s.name.trim() === name.trim())
+        .map(s => s.wear);
+
+      const uniqueWears = [...new Set(wearVariants)];
+
+      for (const wear of uniqueWears) {
+        const baseSkin = existingSkins.find(s => s.name.trim() === name.trim() && s.wear === wear);
+        if (!baseSkin) continue;
+
+        const commonFields = {
+          name,
+          wear,
+          rarity: baseSkin.rarity || rarity,
+          collection: baseSkin.collection || '',
+          price: baseSkin.price || null,
+          volume: baseSkin.volume || null,
+          date: baseSkin.date || null,
+          imageUrl,
+        };
+
+        // Regular — toujours présent
+        updatedSkins.push({
+          ...commonFields,
+          isStatTrak: false,
+          isSouvenir: false,
+        });
+
+        // StatTrak — si disponible
+        if (isST === "StatTrak Available") {
+          updatedSkins.push({
+            ...commonFields,
+            isStatTrak: true,
+            isSouvenir: false,
+          });
+        }
+
+        // Souvenir — si disponible
+        if (isSV === "Souvenir Available") {
+          updatedSkins.push({
+            ...commonFields,
+            isStatTrak: false,
+            isSouvenir: true,
+          });
+        }
+      }
+    }
+
+    await clearAllInventory();
+    await bulkAddAllSkins(updatedSkins);
+    await loadSkins();
+
+    alert(`✅ Mise à jour terminée : ${updatedSkins.length} skins mis à jour avec variantes ST/SV correctes`);
+  };
+
 
   //
   // 🧩 Import JSON → IndexedDB
@@ -95,9 +267,9 @@ function AllSkins({ priceMap = {} }) {
     return allSkins.filter(allSkin => {
       const matchesType =
         typeFilter === 'all' ||
-        (typeFilter === 'stattrak' && allSkin.isST === true) ||
-        (typeFilter === 'regular' && !allSkin.isST && !allSkin.isSV) ||
-        (typeFilter === 'souvenir' && allSkin.isSV === true);
+        (typeFilter === 'stattrak' && allSkin.isStatTrak === true) ||
+        (typeFilter === 'regular' && !allSkin.isStatTrak && !allSkin.isSouvenir) ||
+        (typeFilter === 'souvenir' && allSkin.isSouvenir === true);
 
       const matchesWear = wearFilter === 'all' || allSkin.wear === wearFilter;
       const matchesCollection = collectionFilter === 'all' || allSkin.collection === collectionFilter;
@@ -129,7 +301,19 @@ function AllSkins({ priceMap = {} }) {
         </label>
         <button onClick={handleReset}>♻️ Reset AllSkins</button>
         <button onClick={handleExport}>💾 Exporter JSON</button>
+        <button onClick={updateSkinsFromScrapedData}>🧬 Update IMG + ST/SV</button>
+        <button onClick={generateMissingRegularVariants}>➕ Ajouter variantes regular manquantes</button>
       </div>
+      {/* 📊 Statistiques */}
+      <p style={{
+        fontStyle: 'italic',
+        marginBottom: '1rem',
+        backgroundColor: '#f4f4f4',
+        padding: '0.5rem 1rem',
+        borderRadius: '6px'
+      }}>
+        🧮 Total: <strong>{allSkins.length}</strong> | Regular: <strong>{allSkins.filter(s => !s.isStatTrak && !s.isSouvenir).length}</strong> | ST: <strong>{allSkins.filter(s => s.isStatTrak).length}</strong> | SV: <strong>{allSkins.filter(s => s.isSouvenir).length}</strong>
+      </p>
 
       {/* 🔍 Filtres */}
       <FilterBar>
@@ -179,11 +363,12 @@ function AllSkins({ priceMap = {} }) {
             return (
               <Card key={i} rarity={allSkin.rarity}>
                 <ImageWrapper>
-                  <SkinImage src={allSkin.imageUrl} alt={allSkin.name} isStatTrak={allSkin.isST} />
+                  <SkinImage src={allSkin.imageUrl} alt={allSkin.name} isStatTrak={allSkin.isStatTrak} />
                 </ImageWrapper>
                 <SkinDetails>
                   <SkinTitle rarity={allSkin.rarity} isStatTrak={allSkin.isST}>
-                    {allSkin.isST && <span style={{ fontSize: '1rem', color: '#FFA500', marginRight: '0.5rem' }}>StatTrak™</span>}
+                    {allSkin.isStatTrak && <span style={{ fontSize: '1rem', color: '#FFA500', marginRight: '0.5rem' }}>StatTrak™</span>}
+                    {allSkin.isSouvenir && <span style={{ fontSize: '1rem', color: '#d6e412ff', marginRight: '0.5rem' }}>Souvenir</span>}
                     {allSkin.name}
                     {allSkin.collectionImage && <CollectionImage src={allSkin.collectionImage} />}
                   </SkinTitle>
