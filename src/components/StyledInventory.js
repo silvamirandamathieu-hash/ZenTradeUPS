@@ -1,5 +1,6 @@
 import styled from 'styled-components';
 
+
 export const List = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(580px, 1fr));
@@ -19,8 +20,8 @@ export const Card = styled.div`
   gap: 0.75rem;
   background: ${({ theme }) => theme.colors.cardBackground};
   backdrop-filter: blur(12px);
-  border: 2px solid ${({ rarity, theme }) =>
-    theme.rarityColors[rarity] || theme.colors.border};
+  border: 2px solid ${({ $rarity, theme }) =>
+    theme.rarityColors[$rarity] || theme.colors.border};
   border-radius: 16px;
   padding: 1.5rem;
   position: relative;
@@ -80,24 +81,24 @@ export const SkinImage = styled.img`
   height: auto;
   border-radius: 12px;
   object-fit: cover;
-  border: ${({ isStatTrak, isSouvenir, theme }) =>
-    isStatTrak
-      ? `3px solid ${theme.colors.stattrak}`
-      : isSouvenir
-      ? `3px solid ${theme.colors.souvenir}`
-      : 'none'};
 
-  box-shadow: ${({ isStatTrak, isSouvenir }) =>
-    isStatTrak
-      ? '0 0 12px 4px rgba(255,165,0,0.6)'
-      : isSouvenir
-      ? '0 0 12px 4px rgba(214,228,18,0.6)'
-      : '0 4px 12px rgba(0,0,0,0.1)'};
+  border: ${({ $isStatTrak, $isSouvenir, theme }) => {
+    if ($isStatTrak) return `3px solid ${theme.colors.stattrak}`;
+    if ($isSouvenir) return `3px solid ${theme.colors.souvenir}`;
+    return `2px solid ${theme.colors.regular}`;
+  }};
+
+  box-shadow: ${({ $isStatTrak, $isSouvenir, theme }) => {
+    if ($isStatTrak && theme.shadow?.stattrak) return theme.shadow.stattrak;
+    if ($isSouvenir && theme.shadow?.souvenir) return theme.shadow.souvenir;
+    return theme.shadow?.regular || '0 2px 6px rgba(255, 255, 255, 0.92)';
+  }};
 
   @media (max-width: 600px) {
     width: 100%;
   }
 `;
+
 
 export const VariantGrid = styled.div`
   display: flex;
@@ -142,14 +143,14 @@ export const SkinDetails = styled.div`
 export const SkinTitle = styled.h3`
   margin: 0.3rem;
   font-size: 1.5rem;
-  font-weight: ${({ isStatTrak }) => (isStatTrak ? 'bold' : 600)};
-  color: ${({ rarity, isStatTrak, theme }) =>
-    isStatTrak
+  font-weight: ${({ $isStatTrak }) => ($isStatTrak ? 'bold' : 600)};
+  color: ${({ $rarity, $isStatTrak, theme }) =>
+    $isStatTrak
       ? '#FFA500'
-      : theme.rarityColors[rarity] || theme.colors.accent};
+      : theme.rarityColors[$rarity] || theme.colors.accent}; 
   text-align: left;
-  text-shadow: ${({ isStatTrak }) =>
-    isStatTrak ? '0 0 2px rgba(255, 165, 0, 0.5)' : 'none'};
+  text-shadow: ${({ $isStatTrak }) =>
+    $isStatTrak ? '0 0 2px rgba(255, 165, 0, 0.5)' : 'none'};
 `;
 
 export const Label = styled.span`
@@ -194,12 +195,3 @@ export const Select = styled.select`
   border-radius: 8px;
   border: 1px solid #ccc;
 `;
-///---
-
-/// ✨ Suggestions bonus
-
-///- Tu peux ajouter une animation `fadeIn` sur `Card` pour un effet d’apparition fluide
-///- Si tu veux un layout compact ou un toggle entre “grid” et “list”, je peux te le coder aussi
-///- Et si tu veux que les cartes s’adaptent à un thème sombre ou clair dynamiquement, je peux t’ajouter le switch
-
-///Tu veux que je t’aide à intégrer l’animation ou le mode compact ?

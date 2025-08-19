@@ -1,3 +1,5 @@
+//theme.js
+
 export const lightTheme = {
   colors: {
     bg: '#ffffffff',         // Fond général doux
@@ -13,13 +15,23 @@ export const lightTheme = {
   rarityColors: {
     'Consumer Grade': '#b0c3d9',     // Gris clair
     'Industrial Grade': '#399fc4ff',   // Bleu clair
-    'Mil-Spec Grade': '#1f25cdd4',     // Bleu moyen
+    'Mil-Spec Grade': '#1f25cdd4', 
+    'Consumer': '#b0c3d9',     // Gris clair
+    'Industrial': '#399fc4ff',   // Bleu clair
+    'Mil-Spec': '#1f25cdd4',     // Bleu moyen
     'Restricted': '#da23ffff',         // Violet
     'Classified': '#e91eceff',         // Rose vif
     'Covert': '#e74c3c',             // Rouge intense
     'Contraband': '#f1c40f',         // Jaune doré
     '★': '#f59e0b',                  // Couleur des couteaux / étoiles
   },
+
+  shadow: {
+    regular: '0 2px 6px rgba(0, 0, 0, 0.06)',
+    stattrak: '0 0 12px 4px rgba(255,165,0,0.6)',
+    souvenir: '0 0 12px 4px rgba(214,228,18,0.6)',
+  },
+
 
   spacing: {
     sm: '0.5rem',
@@ -49,13 +61,21 @@ export const darkTheme = {
     'Consumer Grade': '#94a3b8',
     'Industrial Grade': '#38bdf8',
     'Mil-Spec Grade': '#3b82f6',
+    'Consumer': '#94a3b8',
+    'Industrial': '#38bdf8',
+    'Mil-spec': '#3b82f6',
     'Restricted': '#a78bfa',
     'Classified': '#f472b6',
     'Covert': '#f87171',
     'Contraband': '#facc15',
     '★': '#fbbf24',
   },
-
+  shadow: {
+    regular: '0 2px 6px rgba(255, 255, 255, 0.05)',
+    stattrak: '0 0 12px 4px rgba(251,191,36,0.6)',
+    souvenir: '0 0 12px 4px rgba(217,234,72,0.6)',
+  },
+  
   spacing: {
     sm: '0.5rem',
     md: '1rem',

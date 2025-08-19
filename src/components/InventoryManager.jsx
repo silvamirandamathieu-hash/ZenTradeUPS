@@ -244,7 +244,7 @@ function InventoryManager({ inventory, priceMap = {}, onExport, onImport, onRese
             return (
               <Card
                 key={skin.id}
-                rarity={skin.rarity}
+                $rarity={skin.rarity}
                 onClick={() =>
                   setSelectedItemId(prev => (prev === skin.id ? null : skin.id))
                 }
@@ -263,15 +263,15 @@ function InventoryManager({ inventory, priceMap = {}, onExport, onImport, onRese
                   <SkinImage
                     src={skin.imageUrl}
                     alt={skin.name}
-                    isStatTrak={skin.isStatTrak}
+                    $isStatTrak={skin.isStatTrak}
                   />
                   <QuantityBadge>x{totalQty}</QuantityBadge>
                 </ImageWrapper>
 
                 <SkinDetails>
                   <SkinTitle
-                    rarity={skin.rarity}
-                    isStatTrak={skin.isStatTrak}
+                    $rarity={skin.rarity}
+                    $isStatTrak={skin.isStatTrak}
                     className={skin.isStatTrak ? 'stattrak-title' : ''}
                   >
                     {skin.isStatTrak ? `StatTrak™ ${skin.name}` : skin.name}

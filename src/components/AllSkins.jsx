@@ -6,6 +6,7 @@ import {
   Label, Value, FilterBar, Select, ImageWrapper
 } from './StyledInventory'; // adapte le chemin
 import { getAllInventory, clearAllInventory, bulkAddAllSkins } from "../db";
+import AdvancedFilterPanel from './AdvancedFilterPanel'; // ajuste le chemin si besoin
 
 import AK47 from '../scrapedskins/AK-47_img.json';
 import AUG from '../scrapedskins/AUG_img.json';
@@ -80,10 +81,41 @@ const scrapedData = [
   ...XM1014,
   ...ZeusX27
 ];
-const normalizeRarity = (rarity) => {
+
+
+function AllSkins({ priceMap = {} }) {
+  const [allSkins, setAllSkins] = useState([]);
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [wearFilter, setWearFilter] = useState('all');
+  const [collectionFilter, setCollectionFilter] = useState('all');
+  const [raritySearch, setRaritySearch] = useState('all');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [advancedFilters, setAdvancedFilters] = useState({
+    wear: [],
+    rarity: [],
+    type: [],
+    collection: [],
+    weapon: [],
+    priceMin: '',
+    priceMax: ''
+  });
+
+
+  //
+  // 📥 Chargement initial depuis IndexedDB
+  //
+  useEffect(() => {
+    loadSkins();
+  }, []);
+
+  const normalizeRarity = (rarity) => {
   const map = {
+    'Mil-spec Grade': 'Mil-Spec Grade',
+    'Consumer Grade': 'Consumer',
+    'Industrial Grade': 'Industrial',
     'Mil-spec': 'Mil-Spec Grade',
-    'Consumer': 'Consumer Grade',
+    'Consumer ': 'Consumer Grade',
     'Industrial': 'Industrial Grade',
     'Restricted': 'Restricted',
     'Classified': 'Classified',
@@ -93,22 +125,6 @@ const normalizeRarity = (rarity) => {
   };
   return map[rarity] || rarity;
 };
-
-function AllSkins({ priceMap = {} }) {
-  const [allSkins, setAllSkins] = useState([]);
-  const [typeFilter, setTypeFilter] = useState('all');
-  const [wearFilter, setWearFilter] = useState('all');
-  const [collectionFilter, setCollectionFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [raritySearch, setRaritySearch] = useState('all');
-
-
-  //
-  // 📥 Chargement initial depuis IndexedDB
-  //
-  useEffect(() => {
-    loadSkins();
-  }, []);
 
   const loadSkins = async () => {
     const dbSkins = await getAllInventory();
@@ -124,17 +140,24 @@ function AllSkins({ priceMap = {} }) {
     for (const scraped of scrapedData) {
       const { name, imageUrl, isST, isSV, rarity } = scraped;
 
+      const trimmedName = name.trim();
+
       // 🔧 Cas spécial pour le Zeus x27 — recréer toutes les usures manuellement
-      if (name.trim().startsWith("Zeus x27")) {
+      if (trimmedName.startsWith("Zeus x27")) {
         const allWears = ["Factory New", "Minimal Wear", "Field-Tested", "Well-Worn", "Battle-Scarred"];
 
         for (const wear of allWears) {
-          const matchingSkin = existingSkins.find(s => s.name.trim() === name.trim() && s.wear === wear);
+          const matchingSkin = existingSkins.find(s => s.name.trim() === trimmedName && s.wear === wear);
+
+          const resolvedRarity = rarity || matchingSkin?.rarity || "Unknown";
+          if (!rarity && !matchingSkin?.rarity) {
+            console.warn(`⚠️ Rareté manquante pour ${trimmedName} (${wear})`);
+          }
 
           const commonFields = {
-            name,
+            name: trimmedName,
             wear,
-            rarity: rarity || matchingSkin?.rarity || "Consumer Grade",
+            rarity: resolvedRarity,
             collection: matchingSkin?.collection || '',
             price: matchingSkin?.price || null,
             volume: matchingSkin?.volume || null,
@@ -142,49 +165,31 @@ function AllSkins({ priceMap = {} }) {
             imageUrl: matchingSkin?.imageUrl || imageUrl,
           };
 
-          // Regular
-          updatedSkins.push({
-            ...commonFields,
-            isStatTrak: false,
-            isSouvenir: false,
-          });
+          updatedSkins.push({ ...commonFields, isStatTrak: false, isSouvenir: false });
 
-          // StatTrak — si disponible (même si Zeus n’en a pas, on garde la logique)
           if (isST === "StatTrak Available") {
-            updatedSkins.push({
-              ...commonFields,
-              isStatTrak: true,
-              isSouvenir: false,
-            });
+            updatedSkins.push({ ...commonFields, isStatTrak: true, isSouvenir: false });
           }
 
-          // Souvenir — si disponible
           if (isSV === "Souvenir Available") {
-            updatedSkins.push({
-              ...commonFields,
-              isStatTrak: false,
-              isSouvenir: true,
-            });
+            updatedSkins.push({ ...commonFields, isStatTrak: false, isSouvenir: true });
           }
         }
 
         continue;
       }
 
-
-
-      // 🔍 Trouver les usures existantes pour ce skin
+      // 🔍 Cas général : variantes existantes
       const wearVariants = existingSkins
-        .filter(s => s.name.trim() === name.trim())
+        .filter(s => s.name.trim() === trimmedName)
         .map(s => s.wear);
 
       const uniqueWears = [...new Set(wearVariants)];
 
-      // Si aucune usure trouvée, recréer au moins une version par défaut
       if (uniqueWears.length === 0) {
-        console.warn(`⚠️ Aucun wear trouvé pour ${name}, création par défaut`);
+        console.warn(`⚠️ Aucun wear trouvé pour ${trimmedName}, création par défaut`);
         updatedSkins.push({
-          name,
+          name: trimmedName,
           wear: "Field-Tested",
           rarity: rarity || "Unknown",
           collection: '',
@@ -199,16 +204,21 @@ function AllSkins({ priceMap = {} }) {
       }
 
       for (const wear of uniqueWears) {
-        const baseSkin = existingSkins.find(s => s.name.trim() === name.trim() && s.wear === wear);
+        const baseSkin = existingSkins.find(s => s.name.trim() === trimmedName && s.wear === wear);
         if (!baseSkin) {
-          console.log(`❌ Skin ignoré : ${name} (${wear}) — aucune correspondance trouvée dans l'inventaire existant`);
+          console.log(`❌ Skin ignoré : ${trimmedName} (${wear}) — aucune correspondance trouvée`);
           continue;
         }
 
+        const resolvedRarity = baseSkin.rarity || rarity || "Unknown";
+        if (!baseSkin.rarity && !rarity) {
+          console.warn(`⚠️ Rareté manquante pour ${trimmedName} (${wear})`);
+        }
+
         const commonFields = {
-          name,
+          name: trimmedName,
           wear,
-          rarity: baseSkin.rarity || rarity,
+          rarity: resolvedRarity,
           collection: baseSkin.collection || '',
           price: baseSkin.price || null,
           volume: baseSkin.volume || null,
@@ -216,29 +226,14 @@ function AllSkins({ priceMap = {} }) {
           imageUrl,
         };
 
-        // Regular — toujours présent
-        updatedSkins.push({
-          ...commonFields,
-          isStatTrak: false,
-          isSouvenir: false,
-        });
+        updatedSkins.push({ ...commonFields, isStatTrak: false, isSouvenir: false });
 
-        // StatTrak — si disponible
         if (isST === "StatTrak Available") {
-          updatedSkins.push({
-            ...commonFields,
-            isStatTrak: true,
-            isSouvenir: false,
-          });
+          updatedSkins.push({ ...commonFields, isStatTrak: true, isSouvenir: false });
         }
 
-        // Souvenir — si disponible
         if (isSV === "Souvenir Available") {
-          updatedSkins.push({
-            ...commonFields,
-            isStatTrak: false,
-            isSouvenir: true,
-          });
+          updatedSkins.push({ ...commonFields, isStatTrak: false, isSouvenir: true });
         }
       }
     }
@@ -302,6 +297,7 @@ function AllSkins({ priceMap = {} }) {
       setAllSkins([]);
     }
   };
+  
 
   //
   // 📚 Collections uniques
@@ -316,22 +312,57 @@ function AllSkins({ priceMap = {} }) {
   // 🔍 Filtres appliqués
   //
   const filteredInventory = useMemo(() => {
-    if (!Array.isArray(allSkins)) return [];
-    return allSkins.filter(allSkin => {
+    return allSkins.filter(skin => {
+      const normalizeText = (text) =>
+        text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+      
+      const matchesName =
+        searchTerm.trim() === '' ||
+        normalizeText(`${skin.name}`).includes(normalizeText(searchTerm));
+
+
+      const matchesWear =
+          (wearFilter === 'all' || skin.wear === wearFilter) &&
+          (advancedFilters.wear.length === 0 || advancedFilters.wear.includes(skin.wear));
+
+      const matchesRarity =
+        (raritySearch === 'all' || skin.rarity?.toLowerCase().includes(raritySearch.toLowerCase())) &&
+        (advancedFilters.rarity.length === 0 || advancedFilters.rarity.includes(skin.rarity));
+
       const matchesType =
-        typeFilter === 'all' ||
-        (typeFilter === 'stattrak' && allSkin.isStatTrak === true) ||
-        (typeFilter === 'regular' && !allSkin.isStatTrak && !allSkin.isSouvenir) ||
-        (typeFilter === 'souvenir' && allSkin.isSouvenir === true);
+        (typeFilter === 'all' ||
+          (typeFilter === 'stattrak' && skin.isStatTrak) ||
+          (typeFilter === 'souvenir' && skin.isSouvenir) ||
+          (typeFilter === 'regular' && !skin.isStatTrak && !skin.isSouvenir)) &&
+        (advancedFilters.type.length === 0 ||
+          (advancedFilters.type.includes('StatTrak') && skin.isStatTrak) ||
+          (advancedFilters.type.includes('Souvenir') && skin.isSouvenir) ||
+          (advancedFilters.type.includes('Regular') && !skin.isStatTrak && !skin.isSouvenir));
 
-      const matchesWear = wearFilter === 'all' || allSkin.wear === wearFilter;
-      const matchesCollection = collectionFilter === 'all' || allSkin.collection === collectionFilter;
-      const matchesSearch = searchQuery.trim() === '' || allSkin.name.toLowerCase().includes(searchQuery.trim().toLowerCase());
-      const matchesRarity = raritySearch === 'all' || allSkin.rarity === raritySearch;
+       const matchesCollection =
+        (collectionFilter === 'all' || skin.collection === collectionFilter) &&
+        (advancedFilters.collection.length === 0 || advancedFilters.collection.includes(skin.collection));
 
-      return matchesType && matchesWear && matchesCollection && matchesSearch && matchesRarity;
+      const matchesWeapon =
+        advancedFilters.weapon.length === 0 || advancedFilters.weapon.includes(skin.name.split(' | ')[0]);
+
+      const matchesPrice =
+        (advancedFilters.priceMin === '' || (skin.price !== null && skin.price >= parseFloat(advancedFilters.priceMin))) &&
+        (advancedFilters.priceMax === '' || (skin.price !== null && skin.price <= parseFloat(advancedFilters.priceMax)));
+
+      return (
+        matchesWear &&
+        matchesRarity &&
+        matchesType &&
+        matchesCollection &&
+        matchesWeapon &&
+        matchesPrice &&
+        matchesName
+      );
+
     });
-  }, [allSkins, typeFilter, wearFilter, collectionFilter, searchQuery, raritySearch]);
+  }, [allSkins, advancedFilters, typeFilter, wearFilter, raritySearch, collectionFilter, searchTerm]);
 
 
   //
@@ -341,9 +372,10 @@ function AllSkins({ priceMap = {} }) {
     setTypeFilter('all');
     setWearFilter('all');
     setCollectionFilter('all');
-    setSearchQuery('');
+    setSearchTerm('');
     setRaritySearch('all');
   };
+  
 
   const groupedSkins = useMemo(() => {
     const map = new Map();
@@ -387,10 +419,29 @@ function AllSkins({ priceMap = {} }) {
       <FilterBar>
         <input
           type="text"
-          placeholder="🔎 Rechercher..."
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
+          placeholder="🔎 Rechercher un skin..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          autoComplete="off"
+          spellCheck={false}
+          style={{
+            padding: '0.5rem 1rem',
+            fontSize: '1rem',
+            borderRadius: '6px',
+            border: '1px solid rgba(255,255,255,0.2)',
+            backgroundColor: '#2a2e3d',
+            color: '#fff',
+            width: '100%',
+            marginBottom: '1rem',
+            outline: 'none',
+            transition: 'border 0.2s ease'
+          }}
+          onFocus={(e) => e.target.style.border = '1px solid #4CAF50'}
+          onBlur={(e) => e.target.style.border = '1px solid rgba(255,255,255,0.2)'}
         />
+
+
+
         <Select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
           <option value="all">Tous les types</option>
           <option value="stattrak">StatTrak™</option>
@@ -419,6 +470,29 @@ function AllSkins({ priceMap = {} }) {
           {collections.map((col, i) => <option key={i} value={col}>{col}</option>)}
         </Select>
         <button onClick={handleResetFilters}>🔄 Réinitialiser les filtres</button>
+        <button onClick={() => setShowAdvanced(prev => !prev)}>
+          🧠 Filtrage avancé {showAdvanced ? '▲' : '▼'}
+        </button>
+        {showAdvanced && (
+          <AdvancedFilterPanel
+            allSkins={allSkins}
+            filters={advancedFilters}
+            setFilters={setAdvancedFilters}
+            onApply={() => setShowAdvanced(false)}
+            onReset={() => {
+              setAdvancedFilters({
+                wear: [],
+                rarity: [],
+                type: [],
+                collection: [],
+                weapon: [],
+                priceMin: '',
+                priceMax: ''
+              });
+            }}
+          />
+        )}
+
       </FilterBar>
 
       {/* 📦 Liste des skins regroupés */}
@@ -427,34 +501,70 @@ function AllSkins({ priceMap = {} }) {
           <p>Aucun skin trouvé.</p>
         ) : (
           groupedSkins.map((group, i) => {
-            const mainSkin = group[0];
-            const normalizedRarity = normalizeRarity(mainSkin.rarity);
-            const colorMap = {
-              'Factory New': '#4CAF50',
-              'Minimal Wear': '#8BC34A',
-              'Field-Tested': '#FFC107',
-              'Well-Worn': '#FF9800',
-              'Battle-Scarred': '#F44336'
+            const wearOrder = {
+              "Factory New": 0,
+              "Minimal Wear": 1,
+              "Field-Tested": 2,
+              "Well-Worn": 3,
+              "Battle-Scarred": 4,
+              "None": 5
             };
 
+            const colorMap = {
+              "Factory New": "#4CAF50",
+              "Minimal Wear": "#8BC34A",
+              "Field-Tested": "#FFC107",
+              "Well-Worn": "#FF9800",
+              "Battle-Scarred": "#F44336",
+              "None": "#ccc"
+            };
+
+            const mainSkin = group[0];
+            const normalizedRarity = normalizeRarity(mainSkin.rarity);
+            const getWearValue = (wear) => wearOrder[wear?.trim()] ?? 99;
+
+            const sortedVariants = [...group].sort(
+              (a, b) => getWearValue(a.wear) - getWearValue(b.wear)
+            );
+
+            // 🔍 Filtrage uniquement par nom
+            const filteredVariants = sortedVariants.filter(variant =>
+              variant.name?.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
             return (
-              <Card key={i} rarity={normalizedRarity}>
-                <div style={{ display: 'flex', flexDirection: 'row', gap: '2rem', flexWrap: 'wrap', width: '100%' }}>
+              <Card
+                key={mainSkin.id}
+                $rarity={mainSkin.rarity}
+              >
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  gap: '2rem',
+                  flexWrap: 'wrap',
+                  width: '100%'
+                }}>
                   {/* 📸 Image à gauche */}
                   <ImageWrapper>
                     <SkinImage
                       src={mainSkin.imageUrl}
                       alt={mainSkin.name}
-                      isStatTrak={mainSkin.isStatTrak}
-                      isSouvenir={mainSkin.isSouvenir}
+                      $isStatTrak={mainSkin.isStatTrak}
+                      $isSouvenir={mainSkin.isSouvenir}
                     />
                   </ImageWrapper>
 
                   {/* 📋 Infos à droite */}
                   <div style={{ flex: 1, minWidth: '250px' }}>
-                    <SkinTitle rarity={normalizedRarity}>
-                      {mainSkin.isStatTrak && <span style={{ color: '#FFA500', marginRight: '0.5rem' }}>StatTrak™</span>}
-                      {mainSkin.isSouvenir && <span style={{ color: '#d6e412', marginRight: '0.5rem' }}>Souvenir</span>}
+                    <SkinTitle
+                      $rarity={mainSkin.rarity}
+                    >
+                      {mainSkin.isStatTrak && (
+                        <span style={{ color: '#FFA500', marginRight: '0.5rem' }}>StatTrak™</span>
+                      )}
+                      {mainSkin.isSouvenir && (
+                        <span style={{ color: '#d6e412', marginRight: '0.5rem' }}>Souvenir</span>
+                      )}
                       {mainSkin.name}
                     </SkinTitle>
 
@@ -473,29 +583,32 @@ function AllSkins({ priceMap = {} }) {
                       border: '1px solid rgba(255,255,255,0.1)',
                       width: '100%'
                     }}>
-                      {['Factory New', 'Minimal Wear', 'Field-Tested', 'Well-Worn', 'Battle-Scarred'].map(wear => {
-                        const variant = group.find(v => v.wear === wear);
-                        return variant ? (
+                      {filteredVariants.length === 0 ? (
+                        <p style={{ color: '#888', fontStyle: 'italic' }}>
+                          Aucune variante ne correspond à la recherche.
+                        </p>
+                      ) : (
+                        filteredVariants.map((variant, index) => (
                           <div
-                            key={wear}
+                            key={`${variant.name}-${variant.wear}-${index}`}
                             style={{
                               display: 'flex',
                               justifyContent: 'space-between',
                               fontSize: '1.1rem',
                               padding: '0.25rem 0.5rem',
                               borderBottom: '1px solid rgba(255,255,255,0.05)',
-                              color: colorMap[wear],
+                              color: colorMap[variant.wear?.trim()] ?? '#ccc',
                               transition: 'background 0.2s ease',
                               cursor: 'default'
                             }}
                             onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                           >
-                            <span style={{ textAlign: 'left' }}><strong>{wear}</strong></span>
-                            <span style={{ textAlign: 'right' }}>{priceMap[`${variant.name} (${wear})`] || variant.price || 'N/A'} €</span>
+                            <span><strong>{variant.wear ?? 'Sans usure'}</strong></span>
+                            <span>{priceMap[`${variant.name} (${variant.wear})`] || variant.price || 'N/A'} €</span>
                           </div>
-                        ) : null;
-                      })}
+                        ))
+                      )}
                     </div>
                   </div>
                 </div>
