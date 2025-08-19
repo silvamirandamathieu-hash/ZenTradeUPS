@@ -113,39 +113,6 @@ function AllSkins({ priceMap = {} }) {
     const dbSkins = await getAllInventory();
     setAllSkins(dbSkins);
   };
-    const generateMissingRegularVariants = async () => {
-    const existingSkins = await getAllInventory();
-    const newRegulars = [];
-
-    for (const skin of existingSkins) {
-      if (skin.isStatTrak || skin.isSouvenir) {
-        const alreadyExists = existingSkins.some(s =>
-          s.name === skin.name &&
-          s.wear === skin.wear &&
-          !s.isStatTrak &&
-          !s.isSouvenir
-        );
-
-        if (!alreadyExists) {
-          newRegulars.push({
-            ...skin,
-            isStatTrak: false,
-            isSouvenir: false,
-          });
-        }
-      }
-    }
-
-    if (newRegulars.length === 0) {
-      alert("✅ Toutes les variantes regular existent déjà !");
-      return;
-    }
-
-    await bulkAddAllSkins(newRegulars);
-    await loadSkins();
-    alert(`✅ ${newRegulars.length} variantes regular ajoutées !`);
-  };
-
   const updateSkinsFromScrapedData = async () => {
     if (!window.confirm("Mettre à jour les images et variantes ST/SV ?")) return;
 
@@ -383,10 +350,10 @@ function AllSkins({ priceMap = {} }) {
           📥 Importer JSON
           <input type="file" accept="application/json" style={{ display: 'none' }} onChange={handleImport} />
         </label>
-        <button onClick={handleReset}>♻️ Reset AllSkins</button>
-        <button onClick={handleExport}>💾 Exporter JSON</button>
         <button onClick={updateSkinsFromScrapedData}>🧬 Update IMG + ST/SV</button>
-        <button onClick={generateMissingRegularVariants}>➕ Ajouter variantes regular manquantes</button>
+        
+        <button onClick={handleExport}>💾 Exporter JSON</button>
+        <button onClick={handleReset}>♻️ Reset AllSkins</button>
       </div>
       {/* 📊 Statistiques */}
       <p style={{
