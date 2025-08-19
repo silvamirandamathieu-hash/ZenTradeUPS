@@ -155,12 +155,79 @@ function AllSkins({ priceMap = {} }) {
     for (const scraped of scrapedData) {
       const { name, imageUrl, isST, isSV, rarity } = scraped;
 
-      // Trouver les usures existantes pour ce skin
+      // 🔧 Cas spécial pour le Zeus x27 — recréer toutes les usures manuellement
+      if (name.trim().startsWith("Zeus x27")) {
+        const allWears = ["Factory New", "Minimal Wear", "Field-Tested", "Well-Worn", "Battle-Scarred"];
+
+        for (const wear of allWears) {
+          const matchingSkin = existingSkins.find(s => s.name.trim() === name.trim() && s.wear === wear);
+
+          const commonFields = {
+            name,
+            wear,
+            rarity: rarity || matchingSkin?.rarity || "Consumer Grade",
+            collection: matchingSkin?.collection || '',
+            price: matchingSkin?.price || null,
+            volume: matchingSkin?.volume || null,
+            date: matchingSkin?.date || null,
+            imageUrl: matchingSkin?.imageUrl || imageUrl,
+          };
+
+          // Regular
+          updatedSkins.push({
+            ...commonFields,
+            isStatTrak: false,
+            isSouvenir: false,
+          });
+
+          // StatTrak — si disponible (même si Zeus n’en a pas, on garde la logique)
+          if (isST === "StatTrak Available") {
+            updatedSkins.push({
+              ...commonFields,
+              isStatTrak: true,
+              isSouvenir: false,
+            });
+          }
+
+          // Souvenir — si disponible
+          if (isSV === "Souvenir Available") {
+            updatedSkins.push({
+              ...commonFields,
+              isStatTrak: false,
+              isSouvenir: true,
+            });
+          }
+        }
+
+        continue;
+      }
+
+
+
+      // 🔍 Trouver les usures existantes pour ce skin
       const wearVariants = existingSkins
         .filter(s => s.name.trim() === name.trim())
         .map(s => s.wear);
 
       const uniqueWears = [...new Set(wearVariants)];
+
+      // Si aucune usure trouvée, recréer au moins une version par défaut
+      if (uniqueWears.length === 0) {
+        console.warn(`⚠️ Aucun wear trouvé pour ${name}, création par défaut`);
+        updatedSkins.push({
+          name,
+          wear: "Field-Tested",
+          rarity: rarity || "Unknown",
+          collection: '',
+          price: null,
+          volume: null,
+          date: null,
+          imageUrl,
+          isStatTrak: false,
+          isSouvenir: false,
+        });
+        continue;
+      }
 
       for (const wear of uniqueWears) {
         const baseSkin = existingSkins.find(s => s.name.trim() === name.trim() && s.wear === wear);
@@ -168,7 +235,6 @@ function AllSkins({ priceMap = {} }) {
           console.log(`❌ Skin ignoré : ${name} (${wear}) — aucune correspondance trouvée dans l'inventaire existant`);
           continue;
         }
-
 
         const commonFields = {
           name,
@@ -214,6 +280,7 @@ function AllSkins({ priceMap = {} }) {
 
     alert(`✅ Mise à jour terminée : ${updatedSkins.length} skins mis à jour avec variantes ST/SV correctes`);
   };
+
 
 
   //
