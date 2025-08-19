@@ -2,16 +2,12 @@ import styled from 'styled-components';
 
 export const List = styled.div`
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(580px, 1fr));
   gap: 1.5rem;
   padding: 2rem;
 
-  @media (min-width: 1580px) {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  @media (max-width: 1579px) {
-    grid-template-columns: 1fr;
+  @media (max-width: 440px) {
+    padding: 1rem;
   }
 `;
 
@@ -20,7 +16,7 @@ export const Card = styled.div`
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 1.5rem;
+  gap: 0.75rem;
   background: ${({ theme }) => theme.colors.cardBackground};
   backdrop-filter: blur(12px);
   border: 2px solid ${({ rarity, theme }) =>
@@ -28,25 +24,24 @@ export const Card = styled.div`
   border-radius: 16px;
   padding: 1.5rem;
   position: relative;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   transition: transform 0.3s ease;
-  margin: 0;
 
   &:hover {
     transform: scale(1.01);
   }
 
-  @media (max-width: 600px) {
+  @media (max-width: 440px) {
     flex-direction: column;
     align-items: center;
+    padding: 1rem;
   }
 `;
-
 
 export const PriceColumn = styled.div`
   position: absolute;
   top: 50%;
-  right: 5rem;
+  right: 2rem;
   transform: translateY(-50%);
   display: flex;
   flex-direction: column;
@@ -75,18 +70,16 @@ export const QuantityBadge = styled.div`
   justify-content: center;
 `;
 
-
 export const ImageWrapper = styled.div`
   position: relative;
 `;
 
 export const SkinImage = styled.img`
-  width: 200px;
+  width: 280px;
   max-width: 100%;
   height: auto;
   border-radius: 12px;
   object-fit: cover;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   border: ${({ isStatTrak, isSouvenir, theme }) =>
     isStatTrak
       ? `3px solid ${theme.colors.stattrak}`
@@ -98,22 +91,45 @@ export const SkinImage = styled.img`
     isStatTrak
       ? '0 0 12px 4px rgba(255,165,0,0.6)'
       : isSouvenir
-      ? '0 0 12px 4px rgba(214,228,18,0.6)' // jaune souvenir
+      ? '0 0 12px 4px rgba(214,228,18,0.6)'
       : '0 4px 12px rgba(0,0,0,0.1)'};
-
 
   @media (max-width: 600px) {
     width: 100%;
   }
 `;
 
+export const VariantGrid = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 1rem;
+  background-color: #1c1f2b;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.05);
+
+  div {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1rem;
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+    cursor: default;
+
+    &:hover {
+      background-color: rgba(255,255,255,0.05);
+    }
+  }
+`;
 
 export const SkinDetails = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
-  align-items: left;
+  align-items: flex-start;
   text-align: left;
 
   p {
@@ -123,9 +139,8 @@ export const SkinDetails = styled.div`
   }
 `;
 
-
 export const SkinTitle = styled.h3`
-  margin: 0.5rem;
+  margin: 0.3rem;
   font-size: 1.5rem;
   font-weight: ${({ isStatTrak }) => (isStatTrak ? 'bold' : 600)};
   color: ${({ rarity, isStatTrak, theme }) =>
@@ -179,3 +194,12 @@ export const Select = styled.select`
   border-radius: 8px;
   border: 1px solid #ccc;
 `;
+///---
+
+/// ✨ Suggestions bonus
+
+///- Tu peux ajouter une animation `fadeIn` sur `Card` pour un effet d’apparition fluide
+///- Si tu veux un layout compact ou un toggle entre “grid” et “list”, je peux te le coder aussi
+///- Et si tu veux que les cartes s’adaptent à un thème sombre ou clair dynamiquement, je peux t’ajouter le switch
+
+///Tu veux que je t’aide à intégrer l’animation ou le mode compact ?

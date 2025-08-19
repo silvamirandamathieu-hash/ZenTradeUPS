@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  List, Card, SkinImage, SkinTitle, SkinDetails,
-  Label, Value, PriceColumn, FilterBar, Select, CollectionImage, ImageWrapper
+  List, Card, SkinImage, SkinTitle,
+  Label, Value, FilterBar, Select, ImageWrapper
 } from './StyledInventory'; // adapte le chemin
 import { getAllInventory, clearAllInventory, bulkAddAllSkins } from "../db";
 
@@ -102,6 +102,7 @@ function AllSkins({ priceMap = {} }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [raritySearch, setRaritySearch] = useState('all');
 
+
   //
   // 📥 Chargement initial depuis IndexedDB
   //
@@ -113,6 +114,7 @@ function AllSkins({ priceMap = {} }) {
     const dbSkins = await getAllInventory();
     setAllSkins(dbSkins);
   };
+
   const updateSkinsFromScrapedData = async () => {
     if (!window.confirm("Mettre à jour les images et variantes ST/SV ?")) return;
 
@@ -331,6 +333,7 @@ function AllSkins({ priceMap = {} }) {
     });
   }, [allSkins, typeFilter, wearFilter, collectionFilter, searchQuery, raritySearch]);
 
+
   //
   // 🔄 Reset filtres
   //
@@ -342,19 +345,33 @@ function AllSkins({ priceMap = {} }) {
     setRaritySearch('all');
   };
 
+  const groupedSkins = useMemo(() => {
+    const map = new Map();
+
+    for (const skin of filteredInventory) {
+      const key = `${skin.name}_${skin.isStatTrak ? 'ST' : skin.isSouvenir ? 'SV' : 'REG'}`;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(skin);
+    }
+
+    return Array.from(map.values());
+  }, [filteredInventory]);
+  
+
+
   return (
-    <div style={{ padding: '2rem' }}>
+    <div style={{ padding: '1rem' }}>
       {/* 🧰 Actions */}
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
         <label>
           📥 Importer JSON
           <input type="file" accept="application/json" style={{ display: 'none' }} onChange={handleImport} />
         </label>
         <button onClick={updateSkinsFromScrapedData}>🧬 Update IMG + ST/SV</button>
-        
         <button onClick={handleExport}>💾 Exporter JSON</button>
         <button onClick={handleReset}>♻️ Reset AllSkins</button>
       </div>
+
       {/* 📊 Statistiques */}
       <p style={{
         fontStyle: 'italic',
@@ -404,34 +421,84 @@ function AllSkins({ priceMap = {} }) {
         <button onClick={handleResetFilters}>🔄 Réinitialiser les filtres</button>
       </FilterBar>
 
-      {/* 📦 Liste des skins */}
+      {/* 📦 Liste des skins regroupés */}
       <List>
-        {filteredInventory.length === 0 ? (
+        {groupedSkins.length === 0 ? (
           <p>Aucun skin trouvé.</p>
         ) : (
-          filteredInventory.map((allSkin, i) => {
-            const price = priceMap[`${allSkin.name} (${allSkin.wear})`] || allSkin.price || 'N/A';
-            const normalizedRarity = normalizeRarity(allSkin.rarity);
+          groupedSkins.map((group, i) => {
+            const mainSkin = group[0];
+            const normalizedRarity = normalizeRarity(mainSkin.rarity);
+            const colorMap = {
+              'Factory New': '#4CAF50',
+              'Minimal Wear': '#8BC34A',
+              'Field-Tested': '#FFC107',
+              'Well-Worn': '#FF9800',
+              'Battle-Scarred': '#F44336'
+            };
+
             return (
               <Card key={i} rarity={normalizedRarity}>
-                <ImageWrapper>
-                  <SkinImage src={allSkin.imageUrl} alt={allSkin.name} isStatTrak={allSkin.isStatTrak} isSouvenir={allSkin.isSouvenir}/>
-                </ImageWrapper>
-                <SkinDetails>
-                  <SkinTitle rarity={normalizedRarity} isStatTrak={allSkin.isST}>
-                    {allSkin.isStatTrak && <span style={{ fontSize: '1rem', color: '#FFA500', marginRight: '0.5rem' }}>StatTrak™</span>}
-                    {allSkin.isSouvenir && <span style={{ fontSize: '1rem', color: '#d6e412ff', marginRight: '0.5rem' }}>Souvenir</span>}
-                    {allSkin.name}
-                    {allSkin.collectionImage && <CollectionImage src={allSkin.collectionImage} />}
-                  </SkinTitle>
+                <div style={{ display: 'flex', flexDirection: 'row', gap: '2rem', flexWrap: 'wrap', width: '100%' }}>
+                  {/* 📸 Image à gauche */}
+                  <ImageWrapper>
+                    <SkinImage
+                      src={mainSkin.imageUrl}
+                      alt={mainSkin.name}
+                      isStatTrak={mainSkin.isStatTrak}
+                      isSouvenir={mainSkin.isSouvenir}
+                    />
+                  </ImageWrapper>
 
-                  <p><Label>Usure:</Label> <Value>{allSkin.wear}</Value></p>
-                  <p><Label>Collection:</Label> <Value>{allSkin.collection}</Value></p>
-                  <p><Label>Rareté:</Label> <Value>{allSkin.rarity}</Value></p>
-                </SkinDetails>
-                <PriceColumn>
-                  <span>{price} €</span>
-                </PriceColumn>
+                  {/* 📋 Infos à droite */}
+                  <div style={{ flex: 1, minWidth: '250px' }}>
+                    <SkinTitle rarity={normalizedRarity}>
+                      {mainSkin.isStatTrak && <span style={{ color: '#FFA500', marginRight: '0.5rem' }}>StatTrak™</span>}
+                      {mainSkin.isSouvenir && <span style={{ color: '#d6e412', marginRight: '0.5rem' }}>Souvenir</span>}
+                      {mainSkin.name}
+                    </SkinTitle>
+
+                    <p><Label>Collection:</Label> <Value>{mainSkin.collection}</Value></p>
+                    <p><Label>Rareté:</Label> <Value>{mainSkin.rarity}</Value></p>
+
+                    {/* 🧩 Liste verticale des variantes */}
+                    <div style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.5rem',
+                      marginTop: '1rem',
+                      backgroundColor: '#1c1f2b',
+                      padding: '1rem',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      width: '100%'
+                    }}>
+                      {['Factory New', 'Minimal Wear', 'Field-Tested', 'Well-Worn', 'Battle-Scarred'].map(wear => {
+                        const variant = group.find(v => v.wear === wear);
+                        return variant ? (
+                          <div
+                            key={wear}
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              fontSize: '1.1rem',
+                              padding: '0.25rem 0.5rem',
+                              borderBottom: '1px solid rgba(255,255,255,0.05)',
+                              color: colorMap[wear],
+                              transition: 'background 0.2s ease',
+                              cursor: 'default'
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                          >
+                            <span style={{ textAlign: 'left' }}><strong>{wear}</strong></span>
+                            <span style={{ textAlign: 'right' }}>{priceMap[`${variant.name} (${wear})`] || variant.price || 'N/A'} €</span>
+                          </div>
+                        ) : null;
+                      })}
+                    </div>
+                  </div>
+                </div>
               </Card>
             );
           })
